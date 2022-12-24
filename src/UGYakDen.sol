@@ -346,6 +346,24 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
       emit BloodBurned(block.timestamp, amount*90/100);
   }
 
+  function _getYakuzaBloodCostPerRank(uint16 rank) private view returns (uint256 price) {
+      if (rank == 0) return 0;        
+      return (2*YAKUZA_BASE_RANK_COST + YAKUZA_BASE_RANK_COST*((rank-1)**2));
+  }
+
+  function getYakuzaRankUpBloodCost(uint16 currentRank, uint256 ranksToUpgrade) public view  returns (uint256 totalBloodCost) {
+      if(ranksToUpgrade == 0) revert InvalidLevel();
+
+      totalBloodCost = 0;
+
+      for (uint16 i = 1; i <= ranksToUpgrade; i++) {
+      totalBloodCost += _getYakuzaBloodCostPerRank(currentRank + i);
+      }
+      if(totalBloodCost == 0) revert BloodError();
+
+      return totalBloodCost ;
+  }
+
   function unPackFighter(uint256 packedFighter) private pure returns (IUGFYakuza.FighterYakuza memory) {
     IUGFYakuza.FighterYakuza memory yakuza;   
     yakuza.isFighter = uint8(packedFighter)%2 == 1 ? true : false;
