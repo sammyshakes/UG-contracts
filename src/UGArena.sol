@@ -96,6 +96,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
   mapping(address => uint256) private _ownersOfStakedRings;
   mapping(address => uint256) private _ownersOfStakedAmulets;
   mapping(uint256 => uint256) public _ringAmuletUnstakeTimes;  
+  mapping(address => uint256) private _ownerLastClaimAllTime;
   
   // admins
   mapping(address => bool) private _admins;
@@ -139,6 +140,13 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     return _fighterArena[tokenId].owner;
   }
 
+  function getOwnerLastClaimAllTime(address user) external view returns (uint256){
+    return _ownerLastClaimAllTime[user];
+  } 
+
+  function setOwnerLastClaimAllTime(address user) external onlyAdmin {
+    _ownerLastClaimAllTime[user] = block.timestamp;
+  }
 
   function stakedByOwner(address owner) public view returns (uint256[] memory) {
     uint256 ownerTokenCount = getValueInBin(userTotalBalances[owner], USER_TOTAL_BALANCES_BITS_SIZE, FIGHTER_INDEX);
