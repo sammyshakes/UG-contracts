@@ -48,6 +48,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   event TokensClaimed(address indexed owner, uint256[] indexed tokenIds, bool unstaked, uint256 earned, uint256 timestamp);
   event BloodStolen(address indexed owner, uint256 indexed tokenId, uint256 indexed amount);
   event YakuzaTaxPaid(uint256 indexed amount);
+  event BloodBurned( uint256 indexed timestamp, uint256 amount);
   // Operations for _updateIDBalance
   enum Operations { Add, Sub }
 
@@ -69,6 +70,9 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   // total sum of Yakuza rank staked
   uint256 public totalRankStaked;
 
+  //devwallet addy
+  address public devWallet;
+
   // Token IDs balances ; balances[address][id] => balance 
   mapping (address => mapping(uint256 => uint256)) internal stakedBalances;
   // map user address to packed uint256
@@ -81,15 +85,21 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   // admins
   mapping(address => bool) private _admins;
 
-  constructor(address _ugFYakuza, address _blood) {
+  constructor(address _ugFYakuza, address _blood, address _devWallet) {
 
     ugFYakuza = IUGFYakuza(_ugFYakuza);
     ierc1155FY = IERC1155(_ugFYakuza);
     uBlood = IUBlood(_blood);
+    devWallet = _devWallet;
   }
 
   modifier onlyAdmin() {
     require(_admins[_msgSender()], "Arena: Only admins can call this");
+    _;
+  }
+
+  modifier onlyEOA() {
+    if(tx.origin != _msgSender()) revert OnlyEOA({txorigin: tx.origin, sender: _msgSender()});
     _;
   }
 
@@ -219,7 +229,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     emit YakuzaTaxPaid(amount);
   }
 
-  function claimManyFromArena(uint256[] calldata tokenIds, bool unstake) external whenNotPaused nonReentrant {
+  function claimManyFromArena(uint256[] calldata tokenIds, bool unstake) public whenNotPaused nonReentrant {
     require(tokenIds.length > 0, "Empty Array");
     uint256[] memory packedFighters = ugFYakuza.getPackedFighters(tokenIds);
     if(tokenIds.length != packedFighters.length) revert MismatchArrays();
@@ -293,6 +303,47 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     }
     //emit TokenClaimed(stake.owner, tokenId, unstake, owed, block.timestamp);
     return owed;
+  }
+
+  function rankUpYakuzas(
+    uint256[] calldata _tokenIds, 
+    uint256[] memory _ranksToUpgrade, 
+    bool _isStaked
+  ) external whenNotPaused nonReentrant onlyEOA returns (uint256 totalBloodCost) {
+    //require both argument arrays to be same length
+    if(_tokenIds.length != _ranksToUpgrade.length) revert MismatchArrays(); 
+    
+    //if not staked, must be owned by msgSender
+    if(!_isStaked) {
+      if(!ugFYakuza.checkUserBatchBalance(_msgSender(), _tokenIds)) revert InvalidTokenId();
+    } else {
+      if(!verifyAllStakedByUser(_msgSender(), _tokenIds) ) revert InvalidTokenId();
+      // Claim $BLOOD before level up 
+      // This also resets the stake and staking period
+      claimManyFromArena(_tokenIds, false);
+    }
+
+    uint256[] memory yakuzas = ugFYakuza.getPackedFighters(_tokenIds);
+    UGFYakuza.FighterYakuza memory FY;
+    // calc blood cost
+    for(uint256 i = 0; i < yakuzas.length; i++){  
+      FY = unPackFighter(yakuzas[i]);
+      //check to make sure is Yakuza
+      if(!FY.isFighter){
+          totalBloodCost += getYakuzaRankUpBloodCost(FY.rank, _ranksToUpgrade[i]);
+          //add _ranksToUpgrade[i] to FY.rank
+          FY.rank += _ranksToUpgrade[i];
+          ugFYakuza.setFighter(_tokenIds[i], FY);
+      }
+    }
+    burnBlood(_msgSender(), totalBloodCost);      
+  }
+
+  function burnBlood(address account, uint256 amount) private {
+      uBlood.burn(account, amount * 1 ether);
+      //allocate 10% of all burned blood to dev wallet for continued development
+      uBlood.mint(devWallet, amount * 1 ether /10 );
+      emit BloodBurned(block.timestamp, amount*90/100);
   }
 
   function unPackFighter(uint256 packedFighter) private pure returns (IUGFYakuza.FighterYakuza memory) {
@@ -544,6 +595,10 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
 
   function setGameContract(address _ugGame) external onlyOwner {
     ugGame = IUGgame(_ugGame);
+  }
+
+  function setDevWallet(address newWallet) external onlyOwner {
+    devWallet = newWallet;
   }
 
   function setPaused(bool paused) external onlyOwner {
