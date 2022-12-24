@@ -110,7 +110,7 @@ contract UGNFTsTest is DSTest {
         ugFYakuza = new UGFYakuza(uri, name, symbol);
         ugNFT =  new UGNFT(uri, name1, symbol1);
          uBLOOD = IUBlood(bloodContractTestnet);//testnet blood addy
-         ugYakDen = new UGYakDen( address(ugFYakuza), bloodContractTestnet);
+         ugYakDen = new UGYakDen( address(ugFYakuza), bloodContractTestnet, mockOwner);
          ugArena = new UGArena(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(randomizer), address(ugYakDen));
          ugWeapons = new UGWeapons();
          ugRaid = new UGRaid(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(randomizer), mockOwner, 20001);
@@ -149,6 +149,7 @@ contract UGNFTsTest is DSTest {
         //ugFYakuza.addAdmin(address(ugMigration));
         ugFYakuza.addAdmin(address(ugForgeSmith));
         ugFYakuza.addAdmin(address(ugArena));
+        ugFYakuza.addAdmin(address(ugYakDen));
         ugFYakuza.addAdmin(address(raidEntry));
         ugForgeSmith.addAdmin(address(ugGame));
         
@@ -182,6 +183,7 @@ contract UGNFTsTest is DSTest {
         uBLOOD.mint(user1, 60000000 ether);
         uBLOOD.mint(user2, 60000000 ether);
         uBLOOD.addAdmin(address(ugArena));
+        uBLOOD.addAdmin(address(ugYakDen));
         hevm.stopPrank();
         
         ugFYakuza.addAdmin(address(this));
@@ -297,6 +299,16 @@ contract UGNFTsTest is DSTest {
       ugYakDen.payRevenueToYakuza(1000000);
 
       bloodPerRank = ugYakDen.getBloodPerRank();
+
+      hevm.warp(10000);
+      uint256[] memory ids = new uint256[](2);
+      uint256[] memory ranks = new uint256[](2);
+      ids[0] = 1;
+      ids[1] = 2;
+      ranks[0] = 1;
+      ranks[1] = 2;
+      hevm.prank(user1, user1);
+      ugYakDen.rankUpYakuzas(ids, ranks, true);
       
     }
 
@@ -345,13 +357,13 @@ contract UGNFTsTest is DSTest {
       hevm.warp(2 days + 1);
 
        uint _bal = raidEntry.enterRaid(
-                IdsUser, 
-                createRaiderEntries(
-                    createUint8AmountsArray(IdsUser.length, 4, 0, 20), //size);
-                    createUint8AmountsArray(IdsUser.length, 0, 1, 3), //yakFamily choice
-                    createUint32AmountsArray(IdsUser.length, 65, 4, 150) //sweat
-                ));
-                console.log(" user1 cost to enter raids", _bal);
+        IdsUser, 
+        createRaiderEntries(
+          createUint8AmountsArray(IdsUser.length, 4, 0, 20), //size);
+          createUint8AmountsArray(IdsUser.length, 0, 1, 3), //yakFamily choice
+          createUint32AmountsArray(IdsUser.length, 65, 4, 150) //sweat
+        ));
+        console.log(" user1 cost to enter raids", _bal);
 
       
       // console.log('ring',ugNFT.getNftIDsForUser(user1, 2)[0]);

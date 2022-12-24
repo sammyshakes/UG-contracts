@@ -38,6 +38,8 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   error MismatchArrays();
   error OnlyEOA(address txorigin, address sender);
   error InvalidOwner();
+  error BloodError();
+  error InvalidRank();
 
   //////////////////////////////////
   //          EVENTS             //
@@ -65,19 +67,19 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   uint256 internal constant USER_TOTAL_BALANCES_BITS_SIZE   = 32;
   //user total balances bit indexes
   uint256 internal constant YAKUZA_INDEX  = 1;
+  uint256 public YAKUZA_BASE_RANK_COST = 50000;
+
   // total Yakuza staked
   uint256 public totalYakuzaStaked;
   // total sum of Yakuza rank staked
   uint256 public totalRankStaked;
-
   //devwallet addy
   address public devWallet;
 
   // Token IDs balances ; balances[address][id] => balance 
   mapping (address => mapping(uint256 => uint256)) internal stakedBalances;
   // map user address to packed uint256
-  mapping (address => uint256) internal userTotalBalances;
-  
+  mapping (address => uint256) internal userTotalBalances;  
   
   // maps to all Yakuza 
   mapping(uint256 => Stake) private _yakuzaPatrol;
@@ -163,7 +165,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     return (owed);
   }
   
-  function verifyAllStakedByUser(address user, uint256[] calldata _tokenIds) external view returns (bool) {
+  function verifyAllStakedByUser(address user, uint256[] calldata _tokenIds) public view returns (bool) {
     for(uint i; i < _tokenIds.length; i++){  
        if(_yakuzaPatrol[_tokenIds[i]].owner != user) return false;
     }
@@ -309,22 +311,22 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     uint256[] calldata _tokenIds, 
     uint256[] memory _ranksToUpgrade, 
     bool _isStaked
-  ) external whenNotPaused nonReentrant onlyEOA returns (uint256 totalBloodCost) {
+  ) external whenNotPaused onlyEOA returns (uint256 totalBloodCost) {
     //require both argument arrays to be same length
     if(_tokenIds.length != _ranksToUpgrade.length) revert MismatchArrays(); 
     
     //if not staked, must be owned by msgSender
     if(!_isStaked) {
-      if(!ugFYakuza.checkUserBatchBalance(_msgSender(), _tokenIds)) revert InvalidTokenId();
+      if(!ugFYakuza.checkUserBatchBalance(_msgSender(), _tokenIds)) revert InvalidToken();
     } else {
-      if(!verifyAllStakedByUser(_msgSender(), _tokenIds) ) revert InvalidTokenId();
+      if(!verifyAllStakedByUser(_msgSender(), _tokenIds) ) revert InvalidToken();
       // Claim $BLOOD before level up 
       // This also resets the stake and staking period
       claimManyFromArena(_tokenIds, false);
     }
 
     uint256[] memory yakuzas = ugFYakuza.getPackedFighters(_tokenIds);
-    UGFYakuza.FighterYakuza memory FY;
+    IUGFYakuza.FighterYakuza memory FY;
     // calc blood cost
     for(uint256 i = 0; i < yakuzas.length; i++){  
       FY = unPackFighter(yakuzas[i]);
@@ -332,7 +334,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
       if(!FY.isFighter){
           totalBloodCost += getYakuzaRankUpBloodCost(FY.rank, _ranksToUpgrade[i]);
           //add _ranksToUpgrade[i] to FY.rank
-          FY.rank += _ranksToUpgrade[i];
+          FY.rank += uint8(_ranksToUpgrade[i]);
           ugFYakuza.setFighter(_tokenIds[i], FY);
       }
     }
@@ -348,20 +350,20 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
 
   function _getYakuzaBloodCostPerRank(uint16 rank) private view returns (uint256 price) {
       if (rank == 0) return 0;        
-      return (2*YAKUZA_BASE_RANK_COST + YAKUZA_BASE_RANK_COST*((rank-1)**2));
+      return (YAKUZA_BASE_RANK_COST * rank);
   }
 
   function getYakuzaRankUpBloodCost(uint16 currentRank, uint256 ranksToUpgrade) public view  returns (uint256 totalBloodCost) {
-      if(ranksToUpgrade == 0) revert InvalidLevel();
+    if(ranksToUpgrade == 0) revert InvalidRank();
 
-      totalBloodCost = 0;
+    totalBloodCost = 0;
 
-      for (uint16 i = 1; i <= ranksToUpgrade; i++) {
+    for (uint16 i = 1; i <= ranksToUpgrade; i++) {
       totalBloodCost += _getYakuzaBloodCostPerRank(currentRank + i);
-      }
-      if(totalBloodCost == 0) revert BloodError();
+    }
+    if(totalBloodCost == 0) revert BloodError();
 
-      return totalBloodCost ;
+    return totalBloodCost ;
   }
 
   function unPackFighter(uint256 packedFighter) private pure returns (IUGFYakuza.FighterYakuza memory) {
@@ -577,9 +579,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     uint256 bin = _index/16;
     uint256 index = _index % 16;
     return getValueInBin(_ownerStakedTokenList[_owner][bin], 16, index);
-  }
-
- 
+  } 
 
   /** ONLY ADMIN FUNCTIONS */
   function onERC1155Received(
