@@ -152,7 +152,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     _ownerLastClaimAllTime[user] = block.timestamp;
   }
 
-  function stakedByOwner(address owner) public view returns (uint256[] memory) {
+  function stakedByOwner(address owner) external view returns (uint256[] memory) {
     uint256 ownerTokenCount = getValueInBin(userTotalBalances[owner], USER_TOTAL_BALANCES_BITS_SIZE, FIGHTER_INDEX);
     uint256[] memory tokenIds = new uint256[](ownerTokenCount);
     for (uint256 i; i < ownerTokenCount; i++) {
