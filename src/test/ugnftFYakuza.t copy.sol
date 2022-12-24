@@ -309,6 +309,15 @@ contract UGNFTsTest is DSTest {
       ranks[1] = 2;
       hevm.prank(user1, user1);
       ugYakDen.rankUpYakuzas(ids, ranks, true);
+
+      hevm.warp(10010);
+      hevm.prank(address(ugArena));
+      ugYakDen.payRevenueToYakuza(1000000);
+
+      hevm.warp(10020);
+      uint rew = ugYakDen.calculateAllStakingRewards(IdsUser);
+      bloodPerRank = ugYakDen.getBloodPerRank();
+      ttlRankStaked = ugYakDen.totalRankStaked();
       
     }
 

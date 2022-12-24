@@ -3,7 +3,6 @@
 pragma solidity 0.8.13;
 
 import "./ERC1155/interfaces/IERC1155.sol";
-import "./interfaces/IUGArena.sol";
 import "./interfaces/IUGFYakuza.sol";
 import "./interfaces/IUGNFT.sol";
 import "./interfaces/IUBlood.sol";
@@ -75,6 +74,8 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   uint256 public totalRankStaked;
   //devwallet addy
   address public devWallet;
+  //dev cut
+  uint8 public DEV_CUT = 5;
 
   // Token IDs balances ; balances[address][id] => balance 
   mapping (address => mapping(uint256 => uint256)) internal stakedBalances;
@@ -309,7 +310,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
 
   function rankUpYakuzas(
     uint256[] calldata _tokenIds, 
-    uint256[] memory _ranksToUpgrade, 
+    uint256[] calldata _ranksToUpgrade, 
     bool _isStaked
   ) external whenNotPaused onlyEOA returns (uint256 totalBloodCost) {
     //require both argument arrays to be same length
@@ -324,7 +325,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
       // This also resets the stake and staking period
       claimManyFromArena(_tokenIds, false);
     }
-
+    uint256 rankCnt;
     uint256[] memory yakuzas = ugFYakuza.getPackedFighters(_tokenIds);
     IUGFYakuza.FighterYakuza memory FY;
     // calc blood cost
@@ -335,17 +336,19 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
           totalBloodCost += getYakuzaRankUpBloodCost(FY.rank, _ranksToUpgrade[i]);
           //add _ranksToUpgrade[i] to FY.rank
           FY.rank += uint8(_ranksToUpgrade[i]);
+          rankCnt += _ranksToUpgrade[i];
           ugFYakuza.setFighter(_tokenIds[i], FY);
       }
     }
+    totalRankStaked += rankCnt;
     burnBlood(_msgSender(), totalBloodCost);      
   }
 
   function burnBlood(address account, uint256 amount) private {
       uBlood.burn(account, amount * 1 ether);
-      //allocate 10% of all burned blood to dev wallet for continued development
-      uBlood.mint(devWallet, amount * 1 ether /10 );
-      emit BloodBurned(block.timestamp, amount*90/100);
+      //allocate to dev wallet for continued development
+      uBlood.mint(devWallet, amount * DEV_CUT / 100 * 1 ether);
+      emit BloodBurned(block.timestamp, amount * (100 - DEV_CUT) / 100);
   }
 
   function _getYakuzaBloodCostPerRank(uint16 rank) private view returns (uint256 price) {
@@ -617,6 +620,10 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
 
   function setDevWallet(address newWallet) external onlyOwner {
     devWallet = newWallet;
+  }
+
+  function setDevCut(uint8 _devCut) external onlyOwner {
+    DEV_CUT = _devCut;
   }
 
   function setPaused(bool paused) external onlyOwner {
