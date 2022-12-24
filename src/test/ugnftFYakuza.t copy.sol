@@ -239,7 +239,7 @@ contract UGNFTsTest is DSTest {
             _fighterIds[i-2] = i;
         }
 
-          batchMintFighters(user1, lvl,amt, false,1);
+          batchMintFighters(user1, lvl,amt, true,1);
           // batchMintFighters(user1, lvl,amt, false,61);
         //   batchMintFighters(user2, lvl,amt, true,121);
         //  batchMintFighters(user2, lvl,amt, false,181);
@@ -318,7 +318,10 @@ contract UGNFTsTest is DSTest {
       uint rew = ugYakDen.calculateAllStakingRewards(IdsUser);
       bloodPerRank = ugYakDen.getBloodPerRank();
       ttlRankStaked = ugYakDen.totalRankStaked();
-      
+      hevm.prank(user1, user1);
+      ugYakDen.claimManyFromArena(ids, true);
+      bloodPerRank = ugYakDen.getBloodPerRank();
+      ttlRankStaked = ugYakDen.totalRankStaked();      
     }
 
     function testMintBatchFighters() public {

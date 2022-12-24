@@ -89,13 +89,13 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   mapping(address => bool) private _admins;
 
   constructor(address _ugFYakuza, address _blood, address _devWallet) {
-
     ugFYakuza = IUGFYakuza(_ugFYakuza);
     ierc1155FY = IERC1155(_ugFYakuza);
     uBlood = IUBlood(_blood);
     devWallet = _devWallet;
   }
 
+  //MODIFIERS
   modifier onlyAdmin() {
     require(_admins[_msgSender()], "Arena: Only admins can call this");
     _;
@@ -158,9 +158,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     IUGFYakuza.FighterYakuza memory yakuza
   ) private view returns (uint256 owed) {
     Stake memory myStake = getStakedYakuza(tokenId);
-    // Yakuza
     // Calculate portion of $BLOOD based on rank
-    //divide by 1000 to get back normal bloodPerRank, had to *1000 to prevent 0 result
     if(_bloodPerRank  > myStake.bloodPerRank) owed = (yakuza.rank) * (_bloodPerRank - myStake.bloodPerRank);
     
     return (owed);
@@ -291,9 +289,10 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     owed = _calculateStakingRewards(tokenId, yakuza);
     if (unstake) {
       totalRankStaked -= rank; // Remove rank from total staked
-      totalYakuzaStaked--; // Decrease the number
+      totalYakuzaStaked--; // Decrease the number of Yaks staked
 
       delete _yakuzaPatrol[tokenId]; // Delete old mapping
+
       _updateIDStakedBalance(stake.owner, tokenId, 1, Operations.Sub);
       _updateIDUserTotalBalance(stake.owner, YAKUZA_INDEX, 1, Operations.Sub);
     } else { // Just claim rewards
@@ -333,11 +332,11 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
       FY = unPackFighter(yakuzas[i]);
       //check to make sure is Yakuza
       if(!FY.isFighter){
-          totalBloodCost += getYakuzaRankUpBloodCost(FY.rank, _ranksToUpgrade[i]);
-          //add _ranksToUpgrade[i] to FY.rank
-          FY.rank += uint8(_ranksToUpgrade[i]);
-          rankCnt += _ranksToUpgrade[i];
-          ugFYakuza.setFighter(_tokenIds[i], FY);
+        totalBloodCost += getYakuzaRankUpBloodCost(FY.rank, _ranksToUpgrade[i]);
+        //add _ranksToUpgrade[i] to FY.rank
+        FY.rank += uint8(_ranksToUpgrade[i]);
+        rankCnt += _ranksToUpgrade[i];
+        ugFYakuza.setFighter(_tokenIds[i], FY);
       }
     }
     totalRankStaked += rankCnt;
@@ -345,15 +344,15 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   }
 
   function burnBlood(address account, uint256 amount) private {
-      uBlood.burn(account, amount * 1 ether);
-      //allocate to dev wallet for continued development
-      uBlood.mint(devWallet, amount * DEV_CUT / 100 * 1 ether);
-      emit BloodBurned(block.timestamp, amount * (100 - DEV_CUT) / 100);
+    uBlood.burn(account, amount * 1 ether);
+    //allocate to dev wallet for continued development
+    uBlood.mint(devWallet, amount * DEV_CUT / 100 * 1 ether);
+    emit BloodBurned(block.timestamp, amount * (100 - DEV_CUT) / 100);
   }
 
   function _getYakuzaBloodCostPerRank(uint16 rank) private view returns (uint256 price) {
-      if (rank == 0) return 0;        
-      return (YAKUZA_BASE_RANK_COST * rank);
+    if (rank == 0) return 0;        
+    return (YAKUZA_BASE_RANK_COST * rank);
   }
 
   function getYakuzaRankUpBloodCost(uint16 currentRank, uint256 ranksToUpgrade) public view  returns (uint256 totalBloodCost) {

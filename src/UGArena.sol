@@ -95,7 +95,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
   mapping(uint256 => Stake) public _fighterArena;
   mapping(address => uint256) private _ownersOfStakedRings;
   mapping(address => uint256) private _ownersOfStakedAmulets;
-  mapping(uint256 => uint256) public _ringAmuletUnstakeTimes;  
+  mapping(uint256 => uint256) private _ringAmuletUnstakeTimes;  
   mapping(address => uint256) private _ownerLastClaimAllTime;
   
   // admins
@@ -124,20 +124,24 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     return getValueInBin(userTotalBalances[user], USER_TOTAL_BALANCES_BITS_SIZE, FIGHTER_INDEX);
   }
 
-  function getStakedRingIDForUser(address user) public view returns (uint256){
+  function getStakedRingIDForUser(address user) external view returns (uint256){
     return _ownersOfStakedRings[user];
   }
 
-  function getStakedAmuletIDForUser(address user) public view returns (uint256){
+  function getStakedAmuletIDForUser(address user) external view returns (uint256){
     return _ownersOfStakedAmulets[user];
   }
 
-  function getStake(uint256 tokenId) public view returns (Stake memory) {
+  function getStake(uint256 tokenId) external view returns (Stake memory) {
     return _fighterArena[tokenId];
   }
 
-  function getStakeOwner(uint256 tokenId) public view returns (address) {
+  function getStakeOwner(uint256 tokenId) external view returns (address) {
     return _fighterArena[tokenId].owner;
+  }
+
+  function getRingAmuletUnstakeTime(uint256 tokenId) external view returns (uint256) {
+    return _ringAmuletUnstakeTimes[tokenId];
   }
 
   function getOwnerLastClaimAllTime(address user) external view returns (uint256){
@@ -160,14 +164,14 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
   function calculateStakingRewards(uint256 tokenId) external view returns (uint256 owed) {
     uint256[] memory _ids = new uint256[](1);
     _ids[0] = tokenId;
-    Stake memory myStake = getStake(tokenId);
+    Stake memory myStake = _fighterArena[tokenId];
     uint256[] memory fighters = ugFYakuza.getPackedFighters(_ids);
     (uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays) = getAmuletRingInfo(myStake.owner);
     return _calculateStakingRewards(tokenId, ringLevel, ringExpireTime, extraAmuletDays, unPackFighter(fighters[0]));
   }
 
  function calculateAllStakingRewards(uint256[] memory tokenIds) external view returns (uint256 owed) {
-    Stake memory myStake = getStake(tokenIds[0]);
+    Stake memory myStake = _fighterArena[tokenIds[0]];
     (uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays) = getAmuletRingInfo(myStake.owner);
 
     uint256[] memory fighters = ugFYakuza.getPackedFighters(tokenIds);
@@ -184,7 +188,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     uint256 extraAmuletDays, 
     IUGFYakuza.FighterYakuza memory fighter
   ) private view returns (uint256 owed) {
-    Stake memory myStake = getStake(tokenId);
+    Stake memory myStake = _fighterArena[tokenId];
 
     uint256 fighterExpireTime;
     if (fighter.isFighter) { // Fighter
@@ -215,8 +219,8 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
   function getAmuletRingInfo(address user) public view returns(uint256 ringLevel, uint256 ringExpireTime, uint256 extrAmuletDays){
     IUGNFT.RingAmulet memory stakedRing;
     IUGNFT.RingAmulet memory stakedAmulet;
-    uint256 ring = getStakedRingIDForUser(user);
-    uint256 amulet = getStakedAmuletIDForUser(user);
+    uint256 ring = _ownersOfStakedRings[user];
+    uint256 amulet = _ownersOfStakedAmulets[user];
     
     if (ring > 0) {
       stakedRing = ugNFT.getRingAmulet(ring);
@@ -271,7 +275,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
         _fighterArena[tokenIds[i]] = myStake;
         numFighters++;
       }  else revert InvalidToken();
-      
+
       _updateIDStakedBalance(_msgSender(),tokenIds[i], _amounts[i], Operations.Add);
     }
 
@@ -302,7 +306,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     // Fetch the owner so we can give that address the $BLOOD.
     // If the same address does not own all tokenIds this transaction will fail.
     // This is especially relevant when the Game contract calls this function as the _msgSender() - it should NOT get the $BLOOD ofc.
-    address account = getStake(tokenIds[0]).owner;
+    address account = _fighterArena[tokenIds[0]].owner;
     // The _admins[] check allows the Game contract to claim at level upgrades
     // and raid contract when raiding.
     if(account != _msgSender() && !_admins[_msgSender()]) revert InvalidToken();
@@ -313,7 +317,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     
     if(unstake) _removeFromOwnerStakedTokenList(_msgSender(), tokenIds);
     for (uint256 i; i < packedFighters.length; i++) {       
-      account = getStake(tokenIds[i]).owner;
+      account = _fighterArena[tokenIds[i]].owner;
       owed += _claimFighter(tokenIds[i], unstake, ringLevel, ringExpireTime, extraAmuletDays, unPackFighter(packedFighters[i]));     
       //set amounts array for batch transfer
       _amounts[i] = 1;
@@ -342,7 +346,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
   }
 
   function _claimFighter(uint256 tokenId, bool unstake, uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays, IUGFYakuza.FighterYakuza memory fighter) private returns (uint256 owed ) {
-    Stake memory stake = getStake(tokenId);
+    Stake memory stake = _fighterArena[tokenId];
     if(stake.owner != _msgSender() && !_admins[_msgSender()]) revert InvalidOwner();
     if(unstake && block.timestamp - stake.stakeTimestamp < MINIMUM_DAYS_TO_EXIT) revert StakingCoolDown();
 
