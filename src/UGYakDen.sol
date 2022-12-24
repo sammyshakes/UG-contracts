@@ -114,11 +114,11 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     return getValueInBin(userTotalBalances[user], USER_TOTAL_BALANCES_BITS_SIZE, YAKUZA_INDEX);
   }
 
-  function getStakedYakuza(uint256 tokenId) public view returns (Stake memory) {
+  function getStakedYakuza(uint256 tokenId) external view returns (Stake memory) {
     return _yakuzaPatrol[tokenId];
   }
 
-  function getStakedYakuzas(uint256[] memory tokenIds) public view returns (Stake[] memory yakuzas) {
+  function getStakedYakuzas(uint256[] memory tokenIds) external view returns (Stake[] memory yakuzas) {
     yakuzas = new Stake[](tokenIds.length);
     for (uint256 i; i < tokenIds.length; i++) {
       yakuzas[i] = _yakuzaPatrol[tokenIds[i]];
@@ -157,7 +157,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     uint256 tokenId, 
     IUGFYakuza.FighterYakuza memory yakuza
   ) private view returns (uint256 owed) {
-    Stake memory myStake = getStakedYakuza(tokenId);
+    Stake memory myStake = _yakuzaPatrol[tokenId];
     // Calculate portion of $BLOOD based on rank
     if(_bloodPerRank  > myStake.bloodPerRank) owed = (yakuza.rank) * (_bloodPerRank - myStake.bloodPerRank);
     
@@ -239,7 +239,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     // Fetch the owner so we can give that address the $BLOOD.
     // If the same address does not own all tokenIds this transaction will fail.
     // This is especially relevant when the Game contract calls this function as the _msgSender() - it should NOT get the $BLOOD ofc.
-    address account = getStakedYakuza(tokenIds[0]).owner;
+    address account = _yakuzaPatrol[tokenIds[0]].owner;
 
     // The _admins[] check allows the Game contract to claim at level upgrades
     // and raid contract when raiding.
@@ -250,7 +250,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     if(unstake) _removeFromOwnerStakedTokenList(_msgSender(), tokenIds);
     for (uint256 i; i < packedFighters.length; i++) {      
       
-      account = getStakedYakuza(tokenIds[i]).owner;
+      account = _yakuzaPatrol[tokenIds[i]].owner;
       owed += _claimYakuza(tokenIds[i], unstake, unPackFighter(packedFighters[i]));
     
       //set amounts array for batch transfer
@@ -282,7 +282,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   }
 
   function _claimYakuza(uint256 tokenId, bool unstake, IUGFYakuza.FighterYakuza memory yakuza) private returns (uint256 owed) { 
-    Stake memory stake = getStakedYakuza(tokenId);
+    Stake memory stake = _yakuzaPatrol[tokenId];
     uint8 rank = yakuza.rank;
     if(stake.owner != _msgSender() && !_admins[_msgSender()]) revert InvalidOwner();
     
