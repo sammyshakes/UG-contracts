@@ -106,6 +106,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   }
 
   function getStakedYakuzas(uint256[] memory tokenIds) public view returns (Stake[] memory yakuzas) {
+    yakuzas = new Stake[](tokenIds.length);
     for (uint256 i; i < tokenIds.length; i++) {
       yakuzas[i] = _yakuzaPatrol[tokenIds[i]];
     }

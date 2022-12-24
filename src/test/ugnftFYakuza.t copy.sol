@@ -194,6 +194,7 @@ contract UGNFTsTest is DSTest {
      //   ugNFT.setApprovalForAll(address(ugForgeSmith), true);
      //   ugWeapons.setApprovalForAll(address(this), true);
         ugFYakuza.setApprovalForAll(address(ugArena), true);
+        ugFYakuza.setApprovalForAll(address(ugYakDen), true);
         ugNFT.setApprovalForAll(address(ugArena), true);
         ugNFT.setApprovalForAll(address(ugForgeSmith), true);
         ugFYakuza.setApprovalForAll(address(ugRaid), true);
@@ -203,7 +204,7 @@ contract UGNFTsTest is DSTest {
         hevm.stopPrank();
 
         hevm.startPrank(user2, user2);
-         ugFYakuza.setApprovalForAll(address(ugArena), true);
+        ugFYakuza.setApprovalForAll(address(ugArena), true);
         ugNFT.setApprovalForAll(address(ugArena), true);
         ugNFT.setApprovalForAll(address(ugForgeSmith), true);
         ugFYakuza.setApprovalForAll(address(ugRaid), true);
@@ -236,7 +237,7 @@ contract UGNFTsTest is DSTest {
             _fighterIds[i-2] = i;
         }
 
-          batchMintFighters(user1, lvl,amt, true,1);
+          batchMintFighters(user1, lvl,amt, false,1);
           // batchMintFighters(user1, lvl,amt, false,61);
         //   batchMintFighters(user2, lvl,amt, true,121);
         //  batchMintFighters(user2, lvl,amt, false,181);
@@ -279,6 +280,26 @@ contract UGNFTsTest is DSTest {
 
     }
 
+    function testYakDen() public {
+      uint256[] memory IdsUser = ugFYakuza.walletOfOwner(user1);
+      hevm.startPrank(user1, user1);
+      ugYakDen.stakeManyToArena( ugFYakuza.walletOfOwner(user1));
+      IdsUser = ugYakDen.stakedIdsByUser(user1);
+      UGYakDen.Stake[] memory yakStakes = ugYakDen.getStakedYakuzas(IdsUser);
+      hevm.stopPrank();
+
+      uint bloodPerRank = ugYakDen.getBloodPerRank();
+      uint ttlRankStaked = ugYakDen.totalRankStaked();
+      uint ttlYakuzaStaked = ugYakDen.totalYakuzaStaked();
+
+      //prank as admin
+      hevm.prank(address(ugArena));
+      ugYakDen.payRevenueToYakuza(1000000);
+
+      bloodPerRank = ugYakDen.getBloodPerRank();
+      
+    }
+
     function testMintBatchFighters() public {
       
      // uint256[] memory ids = createAmountsArray(50, 5000, 1, 1);
@@ -315,10 +336,12 @@ contract UGNFTsTest is DSTest {
     //test stake    
         ugArena.stakeManyToArena( ugFYakuza.walletOfOwner(user1));
         IdsUser = ugArena.stakedByOwner(user1);
+
+        
  //    IdsUser = ugArena.getStakedYakuzaIDsForUser(user1);
         ugGame.mintRing();
         ugGame.mintAmulet();
-      ugArena.stakedByOwner(user1); 
+      // ugArena.stakedByOwner(user1); 
       hevm.warp(2 days + 1);
 
        uint _bal = raidEntry.enterRaid(
