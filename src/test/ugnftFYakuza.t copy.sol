@@ -5,6 +5,7 @@ import "ds-test/test.sol";
 
 import "../UGNFT.sol";
 import "../UGFYakuza.sol";
+import "../UGYakDen.sol";
 import "../UGRaid.sol";
  import "../UGgame.sol";
  import "../UGWeapons.sol";
@@ -70,13 +71,14 @@ contract UGNFTsTest is DSTest {
     // Deployments
     UGFYakuza public ugFYakuza;
     UGNFT public ugNFT;
-     UGArena public ugArena;
-     IUBlood public uBLOOD;
-     UGgame public ugGame;
-     UGRaid public ugRaid;
-     Randomizer public randomizer;
-     UGWeapons public ugWeapons;
-     RaidEntry public raidEntry;
+    UGYakDen public ugYakDen;
+    UGArena public ugArena;
+    IUBlood public uBLOOD;
+    UGgame public ugGame;
+    UGRaid public ugRaid;
+    Randomizer public randomizer;
+    UGWeapons public ugWeapons;
+    RaidEntry public raidEntry;
     // IUNFT public uNft;
     // Migrations public ugMigration;
     // IUGame public oldGameTest;
@@ -108,7 +110,8 @@ contract UGNFTsTest is DSTest {
         ugFYakuza = new UGFYakuza(uri, name, symbol);
         ugNFT =  new UGNFT(uri, name1, symbol1);
          uBLOOD = IUBlood(bloodContractTestnet);//testnet blood addy
-         ugArena = new UGArena(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(randomizer));
+         ugYakDen = new UGYakDen( address(ugFYakuza), bloodContractTestnet);
+         ugArena = new UGArena(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(randomizer), address(ugYakDen));
          ugWeapons = new UGWeapons();
          ugRaid = new UGRaid(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(randomizer), mockOwner, 20001);
       //   ugRaid = IUGRaid(ugRaidtestContract);
@@ -127,11 +130,13 @@ contract UGNFTsTest is DSTest {
         
        // ugArena.setPaused(false);
         ugArena.setGameContract(address(ugGame));
+        ugYakDen.setGameContract(address(ugGame));
         //set Admins
         ugRaid.addAdmin(address(ugGame));
         ugArena.addAdmin(address(ugGame));
         ugArena.addAdmin(address(ugRaid));
         ugArena.addAdmin(address(raidEntry));
+        ugYakDen.addAdmin(address(ugArena));
 
         ugNFT.addAdmin(address(ugGame));
         ugNFT.addAdmin(address(ugRaid));
@@ -232,7 +237,7 @@ contract UGNFTsTest is DSTest {
         }
 
           batchMintFighters(user1, lvl,amt, true,1);
-          batchMintFighters(user1, lvl,amt, false,61);
+          // batchMintFighters(user1, lvl,amt, false,61);
         //   batchMintFighters(user2, lvl,amt, true,121);
         //  batchMintFighters(user2, lvl,amt, false,181);
      
@@ -309,7 +314,7 @@ contract UGNFTsTest is DSTest {
 
     //test stake    
         ugArena.stakeManyToArena( ugFYakuza.walletOfOwner(user1));
-        IdsUser = ugArena.getStakedFighterIDsForUser(user1);
+        IdsUser = ugArena.stakedByOwner(user1);
  //    IdsUser = ugArena.getStakedYakuzaIDsForUser(user1);
         ugGame.mintRing();
         ugGame.mintAmulet();

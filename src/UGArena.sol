@@ -270,7 +270,8 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
         myStake.bloodPerRank = 0;
         _fighterArena[tokenIds[i]] = myStake;
         numFighters++;
-      }  
+      }  else revert InvalidToken();
+      
       _updateIDStakedBalance(_msgSender(),tokenIds[i], _amounts[i], Operations.Add);
     }
 

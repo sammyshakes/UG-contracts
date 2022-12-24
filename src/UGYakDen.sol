@@ -7,7 +7,6 @@ import "./interfaces/IUGArena.sol";
 import "./interfaces/IUGFYakuza.sol";
 import "./interfaces/IUGNFT.sol";
 import "./interfaces/IUBlood.sol";
-import "./interfaces/IRandomizer.sol";
 import "./interfaces/IUGgame.sol";
 import "./ERC1155/utils/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -23,7 +22,6 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   }
 
   /** CONTRACTS */
-  IRandomizer public randomizer;
   IUGFYakuza public ugFYakuza;
   IUBlood public uBlood;
   IERC1155 public ierc1155;
@@ -83,12 +81,11 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   // admins
   mapping(address => bool) private _admins;
 
-  constructor(address _ugFYakuza, address _blood, address _randomizer) {
+  constructor(address _ugFYakuza, address _blood) {
 
     ugFYakuza = IUGFYakuza(_ugFYakuza);
     ierc1155FY = IERC1155(_ugFYakuza);
     uBlood = IUBlood(_blood);
-    randomizer = IRandomizer(_randomizer);
   }
 
   modifier onlyAdmin() {
@@ -180,6 +177,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     
     for (uint i = 0; i < tokenIds.length; i++) {   
       yakuza = unPackFighter(FY[i]);
+      if(yakuza.isFighter) revert InvalidToken();
       myStake.stakeTimestamp = uint32(block.timestamp);
       myStake.owner = _msgSender();
       _amounts[i] = 1; //set amounts array for batch transfer
@@ -536,11 +534,10 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   
 
   /** ONLY OWNER FUNCTIONS */
-  function setContracts( address _ugFYakuza, address _blood, address _randomizer, address _ugGame) external onlyOwner {
+  function setContracts( address _ugFYakuza, address _blood, address _ugGame) external onlyOwner {
     ugFYakuza = IUGFYakuza(_ugFYakuza);
     ierc1155FY = IERC1155(_ugFYakuza);
     uBlood = IUBlood(_blood);
-    randomizer = IRandomizer(_randomizer);
     ugGame = IUGgame(_ugGame);
   }
 
