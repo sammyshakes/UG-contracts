@@ -6,23 +6,11 @@ import "./ERC1155/utils/Ownable.sol";
 import "./ERC1155/interfaces/IERC1155.sol";
 import "./interfaces/IUBlood.sol";
 import "./interfaces/IUGArena.sol";
-import "./interfaces/IUGRaid.sol";
 import "./interfaces/IRandomizer.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-interface iUGWeapons {
-  function burn(address _from, uint256 _id, uint256 _amount) external;  
-  function mint(address _from, uint256 _id, uint256 _amount, bytes memory _data) external;
-  function batchMint(address _to, uint256[] memory _ids, uint256[] memory _amounts, bytes memory _data) external;  
-}
 
-contract UGRaidClubs is IUGRaid, Ownable, ReentrancyGuard {
-
-  struct Queue {
-    uint128 start;
-    uint128 end;
-    mapping(uint256 => uint256) ids;
-  }
+contract UGRaidClubs is Ownable, ReentrancyGuard {
 
   struct Stake {
     uint32 bloodPerLevel;
@@ -98,6 +86,8 @@ contract UGRaidClubs is IUGRaid, Ownable, ReentrancyGuard {
   
 
   mapping(address => bool) private _admins;
+  //maps fightclub id => Stake
+  mapping(uint256 => Stake) public stakedFightclubs;
   //maps fightclub id => owner address
   mapping(uint256 => address) public stakedFightclubOwners;
   //maps owner => number of staked fightclubs
@@ -220,6 +210,34 @@ contract UGRaidClubs is IUGRaid, Ownable, ReentrancyGuard {
 
     ugNFT.safeBatchTransferFrom(address(this), msg.sender, tokenIds, amounts, "");
     //emit TokenUnStaked(msg.sender, tokenIds);
+  }
+
+  function calculateStakingRewards(uint256 tokenId) external view returns (uint256 owed) {
+    return _calculateStakingRewards(tokenId);
+  }
+
+ function calculateAllStakingRewards(uint256[] memory tokenIds) external view returns (uint256 owed) {
+    uint256[] memory yakuzas = ugFYakuza.getPackedFighters(tokenIds);
+    for (uint256 i; i < tokenIds.length; i++) {
+      owed += _calculateStakingRewards(tokenIds[i], unPackFighter(yakuzas[i]));
+    }
+    return owed;
+  }
+
+  function _calculateStakingRewards(uint256 tokenId) private view returns (uint256 owed) {
+    IUGNFT.ForgeFightClub memory fightclub = ugNFT.getForgeFightClub(tokenId);
+    Stake memory myStake = _yakuzaPatrol[tokenId];
+    // Calculate portion of $BLOOD based on rank
+    //if not expired
+    if(block.timestamp <= myStake.claimTimeStamp){
+      if(bloodPerLevel  > myStake.bloodPerRank) owed = (fightclub.level) * (fightclub.size) * (bloodPerLevel - myStake.bloodPerLevel);    
+    } else {//if fightclub expired
+      //get claim time ratio (block.timestamp - claimtimestamp) / (block.timestamp - stakeTimestamp)
+      uint256 claimRatio = 10000 * (block.timestamp - myStake.claimTimeStamp) / (block.timestamp - myStake.stakeTimestamp);
+      owed = claimRatio * (fightclub.level) * (fightclub.size) * (bloodPerLevel - myStake.bloodPerLevel) / 10000;
+    }
+    
+    return (owed);
   }
 
   function burnBlood(address account, uint256 amount) private {
