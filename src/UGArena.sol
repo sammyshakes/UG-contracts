@@ -312,12 +312,11 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     if(account != _msgSender() && !_admins[_msgSender()]) revert InvalidToken();
     
     //get ring amulet info
-    (uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays) = getAmuletRingInfo(account);
-    
+    (uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays) = getAmuletRingInfo(account);    
     
     if(unstake) _removeFromOwnerStakedTokenList(_msgSender(), tokenIds);
-    for (uint256 i; i < packedFighters.length; i++) {       
-      account = _fighterArena[tokenIds[i]].owner;
+
+    for (uint256 i; i < packedFighters.length; i++) {   
       owed += _claimFighter(tokenIds[i], unstake, ringLevel, ringExpireTime, extraAmuletDays, unPackFighter(packedFighters[i]));     
       //set amounts array for batch transfer
       _amounts[i] = 1;

@@ -520,39 +520,41 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
         if(o == 0 || o == 1 || o == 2){
         //weapon rewards (if over a certain size tier)
         if(raid.sizeTier >= 2) {
-          if(raid.levelTier >= KNUCKLES_TIER && raid.levelTier < CHAINS_TIER)
-             if(o == 0) weaponsToMint[raiderOwner][0][20*(raid.sizeTier)]++;
-             if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][0][PLATINUM_ATTACK_SCORE]++;
-             if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][0][GOLD_ATTACK_SCORE]++;
-          if(raid.levelTier >= CHAINS_TIER && raid.levelTier < BUTTERFLY_TIER)
-             if(o == 0) weaponsToMint[raiderOwner][1][20*(raid.sizeTier)]++;
-             if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][1][PLATINUM_ATTACK_SCORE]++;
-             if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][1][GOLD_ATTACK_SCORE]++;
-          if(raid.levelTier >= BUTTERFLY_TIER && raid.levelTier < MACHETE_TIER)
-             if(o == 0) weaponsToMint[raiderOwner][2][20*(raid.sizeTier)]++;
-             if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][2][PLATINUM_ATTACK_SCORE]++;
-             if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][2][GOLD_ATTACK_SCORE]++;
-          if(raid.levelTier >= MACHETE_TIER && raid.levelTier < KATANA_TIER)
-             if(o == 0) weaponsToMint[raiderOwner][3][20*(raid.sizeTier)]++;
-             if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][3][PLATINUM_ATTACK_SCORE]++;
-             if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][3][GOLD_ATTACK_SCORE]++;
-          if(raid.levelTier >= KATANA_TIER)
-             if(o == 0) weaponsToMint[raiderOwner][4][20*(raid.sizeTier)]++;
-             if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][4][PLATINUM_ATTACK_SCORE]++;
-             if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][4][GOLD_ATTACK_SCORE]++;
+          if(raid.levelTier >= KNUCKLES_TIER && raid.levelTier < CHAINS_TIER){
+            if(o == 0) weaponsToMint[raiderOwner][0][20*(raid.sizeTier)]++;
+            if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][0][PLATINUM_ATTACK_SCORE]++;
+            if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][0][GOLD_ATTACK_SCORE]++;
+          }             
+          if(raid.levelTier >= CHAINS_TIER && raid.levelTier < BUTTERFLY_TIER){
+            if(o == 0) weaponsToMint[raiderOwner][1][20*(raid.sizeTier)]++;
+            if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][1][PLATINUM_ATTACK_SCORE]++;
+            if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][1][GOLD_ATTACK_SCORE]++;
+          }
+          if(raid.levelTier >= BUTTERFLY_TIER && raid.levelTier < MACHETE_TIER){
+            if(o == 0) weaponsToMint[raiderOwner][2][20*(raid.sizeTier)]++;
+            if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][2][PLATINUM_ATTACK_SCORE]++;
+            if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][2][GOLD_ATTACK_SCORE]++;
+          }
+          if(raid.levelTier >= MACHETE_TIER && raid.levelTier < KATANA_TIER){
+            if(o == 0) weaponsToMint[raiderOwner][3][20*(raid.sizeTier)]++;
+            if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][3][PLATINUM_ATTACK_SCORE]++;
+            if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][3][GOLD_ATTACK_SCORE]++;
+          }
+          if(raid.levelTier >= KATANA_TIER){
+            if(o == 0) weaponsToMint[raiderOwner][4][20*(raid.sizeTier)]++;
+            if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][4][PLATINUM_ATTACK_SCORE]++;
+            if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][4][GOLD_ATTACK_SCORE]++;
+          }
         }
       }
       //2nd place blood reward is raid revenue * 2nd place base pct - size tier
-      if(o == 1) raidTickets[o].winnings = raid.revenue * 15 / 100;
+      if(o == 1 && raidTickets[o].sizeTier > 1) raidTickets[o].winnings = raid.revenue * 15 / 100;
     
       //3rd place blood reward is raid revenue * 3rd place base pct
-      if(o == 2 && raidTickets[o].sizeTier > 1) raidTickets[o].winnings = raid.revenue * 5 / 100;
+      if(o == 2 && raidTickets[o].sizeTier > 2) raidTickets[o].winnings = raid.revenue * 5 / 100;
     
       //4th place blood reward is raid revenue * 4th place base pct
-      if(o == 3 && raidTickets[o].sizeTier > 2) raidTickets[o].winnings = raid.revenue * 5 / 100;
-      
-      //5th place blood reward is raid revenue * 5th place base pct
-      if(o == 4 && raidTickets[o].sizeTier > 3) raidTickets[o].winnings = raid.revenue * 5 / 100;
+      if(o == 3 && raidTickets[o].sizeTier > 3) raidTickets[o].winnings = raid.revenue * 5 / 100;
 
       //scars if not kicked out of yakuzaa round
       if (scores[o] > 0) raidTickets[o].scars += uint16(o + 1);
