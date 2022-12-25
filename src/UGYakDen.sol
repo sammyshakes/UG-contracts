@@ -190,12 +190,11 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     for (uint i = 0; i < tokenIds.length; i++) {   
       yakuza = unPackFighter(FY[i]);
       if(yakuza.isFighter) revert InvalidToken();
-      myStake.stakeTimestamp = uint32(block.timestamp);
-      myStake.owner = _msgSender();
       _amounts[i] = 1; //set amounts array for batch transfer
 
       //stake yakuza
       myStake.bloodPerRank = uint64(_bloodPerRank);
+      myStake.stakeTimestamp = uint32(block.timestamp);
       myStake.owner = _msgSender();       
       rankCnt+= yakuza.rank;
       _yakuzaPatrol[tokenIds[i]] = myStake; // Add the Yakuza to Patrol      
