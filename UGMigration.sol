@@ -27,6 +27,10 @@ interface IUGame {
   function getFyTokenTraits(uint256 tokenId) external view returns (IUNFT.FighterYakuza memory);
 }
 
+interface iFightClubLane {
+  function getStakedFightClubIDsForUser(address) external returns(uint256[] memory) ;  
+}
+
 interface IUNFT is IERC721Enumerable {
     struct FighterYakuza {
         bool isRevealed;
@@ -79,6 +83,7 @@ contract Migrations is ReentrancyGuard, Ownable, Pausable {
   IUGame private uGame;
   IUGArena private ugArena;
   IUGRaid private ugRaid;
+  iFightClubLane private fclubLane;
 
   constructor(
     address _ugNFT, 
@@ -92,7 +97,8 @@ contract Migrations is ReentrancyGuard, Ownable, Pausable {
     address _uGame,
     address _ugArena,
     address _ugRaid,
-    address _devWallet
+    address _devWallet,
+    address _fclubLane
   ){
     ugNFT = IUGNFTs(_ugNFT);
     UGNFTnew = IUGNFT(_ugNFTnew);
@@ -106,6 +112,7 @@ contract Migrations is ReentrancyGuard, Ownable, Pausable {
     ugArena = IUGArena(_ugArena);
     ugRaid = IUGRaid(_ugRaid);
     devWallet = _devWallet;
+    fclubLane = iFightClubLane(_fclubLane);
   }
 
   //Errors
@@ -333,7 +340,7 @@ contract Migrations is ReentrancyGuard, Ownable, Pausable {
   } 
 
   function migrateV2StakedFightClubs() external whenNotPaused nonReentrant {
-    uint256[] memory tokenIds = ugRaid.getStakedFightClubIDsForUser(_msgSender());  
+    uint256[] memory tokenIds = fclubLane.getStakedFightClubIDsForUser(_msgSender());  
     require(tokenIds.length > 0, "No Staked Tokens"); 
     uint256[] memory sizes = new uint256[](tokenIds.length);   
     uint256[] memory levels = new uint256[](tokenIds.length);   

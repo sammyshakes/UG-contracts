@@ -14,6 +14,10 @@ import "./interfaces/IUGRaid.sol";
 import "./interfaces/IUGgame.sol";
 import "./interfaces/IUGForgeSmith.sol";
 
+interface iUGFightClubLane {
+  function claimFightClubs(uint256[] memory tokenIds, bool unstake) external returns(uint256[] memory) ;  
+}
+
 
 contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
 
@@ -26,6 +30,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     IUBlood public uBlood;
     IUGArena public ugArena;
     IUGForgeSmith public ugForgeSmith;
+    iUGFightClubLane public fclubLane;
 
       /////////////////////////////////
      //          EVENTS             //
@@ -40,7 +45,6 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     error InvalidTokenId();
     error OnlyEOA(address txorigin, address sender);
     error InvalidSize(uint8 size, uint32 sweat, uint8 yak, uint i);
-    error TooMany();
     error InvalidLevel();
     error InvalidSizes();
     error MaxSizeAllowed();
@@ -63,8 +67,6 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     uint32 constant FIGHTER = 100000;
     uint32 constant FORGE_MAX_SIZE = 5;
     uint32 constant FORGE_MAX_LEVEL = 35;
-    uint32 constant FIGHT_CLUB_MAX_SIZE = 4;
-    uint32 constant FIGHT_CLUB_MAX_LEVEL = 34;
 
     uint16 private FIGHTER_LEVEL_COST_ADJUSTMENT_PCT = 100;
     uint16 private RING_LEVEL_COST_ADJUSTMENT_PCT = 100;
@@ -93,9 +95,6 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     uint256 public FORGE_BLOOD_MINT_COST = 2_000_000 ;
     uint256 public FIGHTCLUB_BLOOD_MINT_COST = 5_000_000 ;
     uint256 public MAXIMUM_BLOOD_SUPPLY = 2_500_000_000 ;
-
-    uint256 private MAXIMUM_FIGHTCLUBS_PER_MINT = 5;
-    uint256 private MAXIMUM_FIGHTCLUBS_PER_WALLET = 5;
     
     address private WITHDRAW_ADDRESS;
     address private devWallet;
@@ -113,7 +112,8 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         address _ugRaid, 
         address _blood, 
         address _ugForgeSmith,
-        address _devWallet
+        address _devWallet,
+        address _fclubLane
     ) {
         ugNFT = IUGNFT(_ugnft);
         ugFYakuza = IUGFYakuza(_ugFYakuza);
@@ -122,6 +122,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         uBlood = IUBlood(_blood);
         ugForgeSmith = IUGForgeSmith(_ugForgeSmith);
         devWallet = _devWallet;
+        fclubLane = iUGFightClubLane(_fclubLane);
     }
 
     /** MINTING FUNCTIONS */
@@ -143,9 +144,6 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
 
     function mintFightClubs(uint amount) external whenNotPaused nonReentrant onlyEOA {
         if(!FIGHTCLUB_MINT_ACTIVE) revert MintNotActive();
-        if(amount > MAXIMUM_FIGHTCLUBS_PER_MINT) revert TooMany();
-        if (MAXIMUM_FIGHTCLUBS_PER_WALLET > 0 && 
-            amount + ugNFT.getNftIDsForUser(_msgSender(), FIGHT_CLUB_INDEX).length > MAXIMUM_FIGHTCLUBS_PER_WALLET) revert TooMany();
         uint256 totalCost = FIGHTCLUB_BLOOD_MINT_COST * amount;
         // This will fail if not enough $BLOOD is available
         burnBlood(_msgSender(), totalCost);
@@ -259,19 +257,13 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         IUGNFT.ForgeFightClub memory fclub;
         for(uint i; i< tokenIds.length; i++){
             fclub  = ugNFT.getForgeFightClub(tokenIds[i]);
-            if(_upgradeSizes[i] > 1 || (_upgradeSizes[i] == 1 && fclub.size == FIGHT_CLUB_MAX_SIZE)) revert MaxSizeAllowed();
-            if(_upgradeLevels[i] > 1 || (_upgradeLevels[i] == 1 && fclub.level == FIGHT_CLUB_MAX_LEVEL)) revert MaxLevelAllowed();
             totalBloodCost += getFightClubLevelUpBloodCost(fclub.level, fclub.size,  _upgradeLevels[i] == 1 ? 1 : 0, _upgradeSizes[i] == 1 ? 1 : 0);
             
-            if(_upgradeLevels[i] == 1) fclub.level += 1;
-            if(_upgradeSizes[i] == 1) fclub.size += 1;
-            // add to fightclub ques for new levelTiers and sizeTiers if staked
-            if(fclub.owner == address(ugRaid) && (_upgradeLevels[i] == 1|| _upgradeSizes[i] == 1)){
-                
-                ugRaid.addFightClubToQueueAfterLevelSizeUp(tokenIds[i],  _upgradeSizes[i] == 1 ? 1 : 0, _upgradeLevels[i] == 1 ? 1 : 0, fclub);
-            }            
-            _upgradeLevels[i] = fclub.level;
-            _upgradeSizes[i] = fclub.size;
+            if(_upgradeLevels[i] == 1) _upgradeLevels[i] += 1;
+            if(_upgradeSizes[i] == 1) _upgradeSizes[i] += 1;
+
+            fclubLane.claimFightClubs(tokenIds, false);
+                    
         }  
               
         burnBlood(_msgSender(), totalBloodCost);
@@ -552,14 +544,6 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     function setPaused(bool paused) external onlyOwner {
         if (paused) _pause();
         else _unpause();
-    }
-
-    function setMaxFightClubsPerMint(uint256 amt) external onlyOwner {
-        MAXIMUM_FIGHTCLUBS_PER_MINT = amt;
-    }
-
-    function setMaxFightClubsPerWallet(uint256 amt) external onlyOwner {
-        MAXIMUM_FIGHTCLUBS_PER_WALLET = amt;
     }
 
     function setFighterBaseLevelCost(uint256 newCost) external onlyOwner {

@@ -16,6 +16,14 @@ interface iUGWeapons {
   function batchMint(address _to, uint256[] memory _ids, uint256[] memory _amounts, bytes memory _data) external;  
 }
 
+interface iUGYakDen {
+  function payRevenueToYakuza(uint256 amount) external;  
+}
+
+interface iFightClubLane {
+  function payRevenueToFightCLubs(uint256 amount) external;  
+}
+
 contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
 
   struct Queue {
@@ -32,7 +40,8 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     address _ugWeapons, 
     address _randomizer,
     address _devWallet,
-    uint256 _devFclubId
+    address _yakDen,
+    address _fclubLane
   ) {
     ierc1155FY = IERC1155(_ugFYakuza);
     ugNFT = IUGNFT(_ugnft);
@@ -42,7 +51,8 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     ugWeapons = iUGWeapons(_ugWeapons);
     randomizer = IRandomizer(_randomizer);    
     devWallet = _devWallet;
-    devFightClubId = _devFclubId;
+    yakDen = iUGYakDen(_yakDen);
+    fclubLane = iFightClubLane(_fclubLane);
 
     attackScoreToWeaponIndex[BRONZE_ATTACK_SCORE] = BRONZE;
     attackScoreToWeaponIndex[GOLD_ATTACK_SCORE] = GOLD_WEAPON;
@@ -61,6 +71,8 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   IUBlood private uBlood;
   iUGWeapons private ugWeapons;
   IRandomizer private randomizer; 
+  iUGYakDen public yakDen;
+  iFightClubLane public fclubLane;
 
   //////////////////////////////////
   //          EVENTS             //
@@ -73,7 +85,6 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   event YakuzaFamilyWinner(uint256 indexed raidId, uint256 yakFamily);
   event YakuzaRaidShareStolen(uint256 indexed fighterId, uint256 indexed raidId);
   event RaiderOwnerBloodRewardClaimed(address indexed user);
-  event FightClubOwnerBloodRewardClaimed(address indexed user);
 
   //////////////////////////////////
   //          ERRORS             //
@@ -146,7 +157,6 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   
   uint256 constant SWEAT_WEIGHT = 20;
   uint256 constant SCARS_WEIGHT = 5;
-  uint256 constant UNSTAKE_COOLDOWN = 48 hours;
   uint256 private FIGHT_CLUB_BASE_CUT_PCT = 25;
   uint256 private YAKUZA_BASE_CUT_PCT = 5;
   uint256 private REFEREE_BASE_CUT_PCT = 10;
@@ -158,31 +168,21 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
 
   uint256 private MAX_RAIDERS_PER_REF = 100;
   uint256 private maxRaiderQueueLevelTier;
-  uint256 private maxStakedFightClubRaidSizeTier;
-  uint256 private maxStakedFightClubLevelTier;
+  uint256 private maxRaiderQueueSizeTier;
+  
   uint256 public ttlRaids;
-  uint256 public totalFightClubsStaked;
-  uint256 private devFightClubId;
   address private devWallet;
   
 
   mapping(address => bool) private _admins;
-  //maps level => size => fightclub queue
-  mapping(uint256 => mapping(uint256 => Queue)) public fightClubQueue;
   //maps level => size => Raider token Ids queue
   mapping(uint256 => mapping(uint256 => Queue)) public RaiderQueue;
-  //maps fightclub id => owner address
-  mapping(uint256 => address) public stakedFightclubOwners;
-  //maps owner => number of staked fightclubs
-  mapping(address => uint256) public ownerTotalStakedFightClubs;
   //maps address => weapon => metal score => value
   mapping(address => mapping(uint256 => mapping(uint256 => uint256 ))) public weaponsToMint;
   //maps tokenId to packed uint (bools) is in raider que
   mapping(uint256 => uint256) private raiderInQue;
   //maps Raider owner => blood rewards
   mapping(address => uint256) public raiderOwnerBloodRewards;
-  //maps FightClub owner => blood rewards
-  mapping(address => uint256) public fightClubOwnerBloodRewards;
   
   //Modifiers//
   modifier onlyAdmin() {
@@ -208,13 +208,14 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     uint256 yakuzaFamilyWinner;
     uint256 _yakRewards;
     uint256 refRewards;
+    uint256 fightClubRewards;
 
     Raid memory raid;    
     RaidEntryTicket[] memory raidTickets ;
     uint256[] memory scores;
     //i = levelTier , j = sizeTier start from highest and we need to limit fighters
      for(uint8 i=uint8(maxRaiderQueueLevelTier); i >= 1; i--){
-      for(uint8 j=uint8(maxStakedFightClubRaidSizeTier); j >= 1; j--){
+      for(uint8 j=uint8(maxRaiderQueueSizeTier); j >= 1; j--){
         //BEGINNING OF EACH FIGHTER QUEUE
         raidSize = j*5;        
         tempVal = getRaiderQueueLength( i, j);//tempVal is queuelength here
@@ -287,7 +288,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
             else emit YakuzaRaidShareStolen(raidTickets[0].fighterId, raid.id);
             
             //fight club owner rewards
-            fightClubOwnerBloodRewards[stakedFightclubOwners[raid.fightClubId]] += FIGHT_CLUB_BASE_CUT_PCT * raid.revenue/100; 
+            fightClubRewards += FIGHT_CLUB_BASE_CUT_PCT * raid.revenue/100; 
   
             //referee rewards
             refRewards += (REFEREE_BASE_CUT_PCT * raid.revenue) / 100 ;
@@ -323,8 +324,8 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     }
     
     
-    
-    ugArena.payRaidRevenueToYakuza( _yakRewards);
+    fclubLane.payRevenueToFightCLubs(fightClubRewards);
+    yakDen.payRevenueToYakuza( _yakRewards);
     //send ref rewards
     uBlood.mint(msg.sender,refRewards * 1 ether);
     ugWeapons.mint(msg.sender, weapon, numRaiders/5, "");
@@ -341,61 +342,11 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
    return _getQueueLength(RaiderQueue[level][sizeTier]);
   }
 
-  function stakeFightclubs(uint256[] calldata tokenIds) external nonReentrant {
-    //make sure is owned by sender
-    if(!ugNFT.checkUserBatchBalance(msg.sender, tokenIds)) revert InvalidTokenId();    
-    IUGNFT.ForgeFightClub[] memory fightclubs = ugNFT.getForgeFightClubs(tokenIds);
-    if(tokenIds.length != fightclubs.length) revert MismatchArrays();
-    
-    _stakeFightclubs(msg.sender, tokenIds, fightclubs);
-  }
-
-  function unstakeFightclubs(uint256[] calldata tokenIds) external nonReentrant {
-    uint256[] memory amounts = new uint256[](tokenIds.length);
-    for(uint i; i < tokenIds.length;i++){
-      //make sure sender is ringowner
-      if(stakedFightclubOwners[tokenIds[i]] != msg.sender) revert InvalidTokenId();
-      //Update unstake time
-      ugNFT.setFightClubUnstakeTime(tokenIds[i], true);
-      delete stakedFightclubOwners[tokenIds[i]];
-      amounts[i] = 1;
-    }
-
-    totalFightClubsStaked -= tokenIds.length;
-    ownerTotalStakedFightClubs[msg.sender] -= tokenIds.length;
-
-    ugNFT.safeBatchTransferFrom(address(this), msg.sender, tokenIds, amounts, "");
-    //emit TokenUnStaked(msg.sender, tokenIds);
-  }
-   
-  function getStakedFightClubIDsForUser(address user) external view returns (uint256[] memory){
-    //get balance of fight clubs
-    uint256 numStakedFightClubs = ownerTotalStakedFightClubs[user];
-    uint256[] memory _tokenIds = new uint256[](numStakedFightClubs);
-    //loop through user balances until we find all the fighters
-    uint count;
-    uint ttl = ugNFT.ttlFightClubs();
-    for(uint i = 1; count<numStakedFightClubs && i <= FIGHT_CLUB + ttl; i++){
-      if(stakedFightclubOwners[FIGHT_CLUB + i] == user){
-        _tokenIds[count] = FIGHT_CLUB + i;
-        count++;
-      }
-    }
-    return _tokenIds;
-  }
-
   function claimRaiderBloodRewards() external nonReentrant {
     uint256 payout =  raiderOwnerBloodRewards[msg.sender];
     delete raiderOwnerBloodRewards[msg.sender];
     uBlood.mint(msg.sender, payout * 1 ether);
     emit RaiderOwnerBloodRewardClaimed(msg.sender);
-  }
-
-  function claimFightClubBloodRewards() external nonReentrant {
-    uint256 payout =  fightClubOwnerBloodRewards[msg.sender];
-    delete fightClubOwnerBloodRewards[msg.sender];
-    uBlood.mint(msg.sender, payout * 1 ether);
-    emit FightClubOwnerBloodRewardClaimed(msg.sender);
   }
 
   function getYakuzaRoundScore(uint256 yakuzaFamily, uint256 rand) private pure returns (uint8 _yakScore){
@@ -640,61 +591,20 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     return (tickets, raid);
   }
 
-  //this function creates a raid with next availble fightclub
+  //this function creates a raid 
   function _createRaid(uint8 levelTier, uint8 _raidSizeTier) private returns (Raid memory){
     Raid memory raid; 
-    //get queue length for fightclubs
-    uint16 queuelength = _getQueueLength(fightClubQueue[levelTier][_raidSizeTier]);
-    uint256 fclubId;
-    
-    //loop through fight clubs to find next eligible
-    for(uint i; i < queuelength; i++){
-      //packed id with size 
-      fclubId = getFightClubInQueueAndRecycle( levelTier, _raidSizeTier) ;
-      //if we find an elible one, break out of for loop
-      if(fclubId > 0) break;
-    }
-
-    //if no eligible fight clubs are in queue
-    if(fclubId == 0) {
-      //get house/dev fight club to hold raid
-      fclubId = devFightClubId ;
-    }
     
     raid.levelTier = levelTier;
     raid.sizeTier = _raidSizeTier; 
     raid.id = uint32(++ttlRaids);
-    raid.fightClubId = uint16(fclubId );
+    raid.fightClubId = 0;
     raid.timestamp = uint32(block.timestamp);
     emit RaidCreated(raid.id, raid);
   
     return raid;
   }
 
-   //returns 0 if token is no longer eligible for que (did not level up/ maintain or not staked)
-  function getFightClubInQueueAndRecycle( uint8 _levelTier, uint8 _raidSizeTier) private returns (uint256) {
-    //get packed value: id with fightclub size
-    uint256 id = removeFromQueue(fightClubQueue[_levelTier][_raidSizeTier], IDS_BITS_SIZE);
-    //uint256 unpackedId = id%2 ** 11;
-    //do not re-enter queue if has been unstaked since getting in queue
-    if(stakedFightclubOwners[id] == address(0)) return 0;
-    IUGNFT.ForgeFightClub memory fightclub = ugNFT.getForgeFightClub(id);
-    //and is right level and size, do not re-enter queue if fails this check
-    if(fightclub.size < _raidSizeTier || fightclub.level < _levelTier) return 0;
-    //if fight club has not been leveled up at least once in last week + 1 day auto unstake fightclub
-    if(fightclub.lastLevelUpgradeTime + 8 days < block.timestamp) {
-      //auto unstake if hasnt been already
-      _autoUnstakeFightClub(id);
-      return 0;
-    }
-
-    //add back to queue with current size
-    //unpackedId |= fightclub.size<<11;
-    addToQueue(fightClubQueue[_levelTier][_raidSizeTier], id, IDS_BITS_SIZE);
-    //check to see fight club has been leveled up at least once in last week
-    if(fightclub.lastLevelUpgradeTime + 7 days < block.timestamp) return 0;
-    return id;
-  }
 
   function getTicketInQueue( uint256 _levelTier, uint256 _raidSizeTier) private returns (RaidEntryTicket memory) {
     RaidEntryTicket memory ticket;
@@ -717,7 +627,9 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
 
   function addTicketsToRaiderQueue(uint256[] memory packedTickets) external onlyAdmin {
     uint8 levelTier;
+    uint8 sizeTier;
     for(uint i; i < packedTickets.length; i++){
+      sizeTier = uint8(packedTickets[i]);
       levelTier = uint8(packedTickets[i]>>8);
       if(levelTier > 0) {
         levelTier = (levelTier-1)/3 + 1;
@@ -725,72 +637,11 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
       //add to queue and convert fighterid to raider id to use a smaller storage slot
       addToQueueFullUint(RaiderQueue[levelTier][uint8(packedTickets[i])], packedTickets[i]);
       maxRaiderQueueLevelTier = levelTier  > maxRaiderQueueLevelTier ? levelTier  : maxRaiderQueueLevelTier;    
+      maxRaiderQueueSizeTier = sizeTier  > maxRaiderQueueSizeTier ? sizeTier  : maxRaiderQueueSizeTier;   
     }
   }    
 
-  function _stakeFightclubs(address account, uint256[] calldata tokenIds, IUGNFT.ForgeFightClub[] memory fightclubs) private {
-    uint256[] memory amounts = new uint256[](tokenIds.length);
-    for(uint i; i < tokenIds.length; i++){
-      //make sure it has been unstaked for 48 hours to clear the fightclub que 
-      //so fclub owner cant game by continually staking and unstaking
-      if(fightclubs[i].lastUnstakeTime > 1662170673 && fightclubs[i].lastUnstakeTime + UNSTAKE_COOLDOWN > block.timestamp) revert StillUnstakeCoolDown();
-      
-      stakedFightclubOwners[tokenIds[i]] = account;
-      amounts[i] = 1;
-      //add fightclub to queue, use (1 , 1) for (startSizeTier, startlevelTier)
-       _addFightClubToQueues(tokenIds[i], 1, 1, fightclubs[i]);
-       //set unstake time to 0
-      ugNFT.setFightClubUnstakeTime(tokenIds[i], false);
-    }
-    totalFightClubsStaked += tokenIds.length;
-    ownerTotalStakedFightClubs[account] += tokenIds.length;
 
-    ugNFT.safeBatchTransferFrom(account, address(this), tokenIds, amounts, "");
-    //emit TokenStaked(account, tokenId);
-  }
-
-  function addFightClubToQueueAfterLevelSizeUp(
-    uint256 tokenId, 
-    uint8 sizeTiersToUpgrade, 
-    uint8 levelTiersToUpgrade, 
-    IUGNFT.ForgeFightClub calldata fightclub
-  ) external onlyAdmin {
-
-    if(levelTiersToUpgrade > 0){
-      _addFightClubToQueues(tokenId,  1,  fightclub.level, fightclub);
-    }
-
-    if(sizeTiersToUpgrade > 0){
-      _addFightClubToQueues(tokenId,  fightclub.size,  1, fightclub);
-    }
-   
-  }
-
-  function _addFightClubToQueues(uint256 tokenId, uint8 startSizeTier, uint8 startLevelTier, IUGNFT.ForgeFightClub memory fightclub) private {
-    //check to see fight club has been leveled up at least once in last week
-    if(fightclub.lastLevelUpgradeTime + 7 days > block.timestamp) 
-    {
-      uint8 maxLevelTier = fightclub.level;  
-      uint8 maxSizeTier = fightclub.size; 
-     
-      for(uint8 j=startLevelTier; j <= maxLevelTier; j++){
-        for(uint8 k=startSizeTier; k <= maxSizeTier; k++){
-          addToQueue(fightClubQueue[j][k], tokenId, IDS_BITS_SIZE);
-          maxStakedFightClubRaidSizeTier = k  > maxStakedFightClubRaidSizeTier ? k  : maxStakedFightClubRaidSizeTier;
-          maxStakedFightClubLevelTier = maxLevelTier  > maxStakedFightClubLevelTier ? maxLevelTier  : maxStakedFightClubLevelTier;
-        }
-      }
-    }
-  }
-
-  function _autoUnstakeFightClub(uint256 tokenId) private {
-    address account = stakedFightclubOwners[tokenId];
-    delete stakedFightclubOwners[tokenId];
-    ugNFT.setFightClubUnstakeTime(tokenId, true);
-     totalFightClubsStaked--;
-    ownerTotalStakedFightClubs[account]--;
-    ugNFT.safeTransferFrom(address(this), account, tokenId, 1, "");
-  }
 
   function _getQueueLength(Queue storage queue) private view returns (uint16){
     return uint16(queue.end - queue.start);
@@ -853,9 +704,11 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     address _ugArena, 
     address _ugFYakuza, 
     address _ugNFT, 
+    address _yakDen,
     address _uBlood,
     address _ugWeapons, 
-    address _randomizer
+    address _randomizer,
+    address _fclubLane
   ) external onlyOwner {
     ierc1155FY = IERC1155(_ugFYakuza);
     ugNFT = IUGNFT(_ugNFT);
@@ -864,6 +717,8 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     ugArena = IUGArena(_ugArena);
     ugWeapons = iUGWeapons(_ugWeapons);
     randomizer = IRandomizer(_randomizer);
+    yakDen = iUGYakDen(_yakDen);
+    fclubLane = iFightClubLane(_fclubLane);
   }
 
   function addAdmin(address addr) external onlyOwner {
@@ -889,10 +744,6 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   function setDevWallet(address newWallet) external onlyOwner {
     if(newWallet == address(0)) revert InvalidAddress();
     devWallet = newWallet;
-  }
-
-  function setDevFightClubId(uint256 id) external onlyOwner {
-    devFightClubId = id;
   }
 
   function setMaxRaidersPerRef(uint256 numRaiders) external onlyOwner {

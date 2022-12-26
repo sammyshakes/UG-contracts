@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 
-contract UGRaidClubs is Ownable, Pausable, ReentrancyGuard {
+contract UGFightClubLane is Ownable, Pausable, ReentrancyGuard {
 
   struct Stake {
     uint64 bloodPerLevel;
@@ -61,16 +61,12 @@ contract UGRaidClubs is Ownable, Pausable, ReentrancyGuard {
   error InvalidSize();
 
   //////////////////////////////////////////
-  uint16 constant MAX_SIZE_TIER = 4;
   uint16 private DEV_CUT = 5;
   uint256 constant FIGHT_CLUB = 20000;
-
   
   uint256 private FIGHT_CLUB_BASE_CUT_PCT = 25;
   uint256 private YAKUZA_BASE_CUT_PCT = 5;
 
-  uint256 private maxStakedFightClubRaidSizeTier;
-  uint256 private maxStakedFightClubLevelTier;
   uint256 public totalFightClubsStaked;
   uint256 public totalLevelsStaked;  
   uint256 public bloodPerLevel;
@@ -83,8 +79,6 @@ contract UGRaidClubs is Ownable, Pausable, ReentrancyGuard {
   mapping(uint256 => address) public stakedFightclubOwners;
   //maps owner => number of staked fightclubs
   mapping(address => uint256) public ownerTotalStakedFightClubs;
-  //maps FightClub owner => blood rewards
-  mapping(address => uint256) public fightClubOwnerBloodRewards;
   // any rewards distributed when no Yakuza are staked
   uint256 private _unaccountedRewards = 0;  
   
@@ -118,13 +112,6 @@ contract UGRaidClubs is Ownable, Pausable, ReentrancyGuard {
     }
     return _tokenIds;
   }
-
-  function claimFightClubBloodRewards() external nonReentrant {
-    uint256 payout =  fightClubOwnerBloodRewards[msg.sender];
-    delete fightClubOwnerBloodRewards[msg.sender];
-    uBlood.mint(msg.sender, payout * 1 ether);
-    emit FightClubOwnerBloodRewardClaimed(msg.sender);
-  } 
 
   function stakeFightclubs(uint256[] calldata tokenIds) external nonReentrant {
     //make sure is owned by sender
@@ -162,7 +149,6 @@ contract UGRaidClubs is Ownable, Pausable, ReentrancyGuard {
 
   function claimFightClubs(uint256[] calldata tokenIds, bool unstake) public whenNotPaused nonReentrant {
     require(tokenIds.length > 0, "Empty Array");
-    Stake memory myStake;
     IUGNFT.ForgeFightClub[] memory fightclubs = ugNFT.getForgeFightClubs(tokenIds);
     if(tokenIds.length != fightclubs.length) revert MismatchArrays();
     uint256[] memory _amounts = new uint256[](tokenIds.length);
@@ -191,6 +177,10 @@ contract UGRaidClubs is Ownable, Pausable, ReentrancyGuard {
 
         // Delete old mapping
         delete stakedFightclubs[tokenIds[i]]; 
+
+        //set amounts array for batch transfer
+        _amounts[i] = 1;
+
       } else {
         // Just claim rewards
         Stake memory myStake;
@@ -199,14 +189,11 @@ contract UGRaidClubs is Ownable, Pausable, ReentrancyGuard {
         myStake.owner = account;
         // Reset stake
         stakedFightclubs[tokenIds[i]] = myStake; 
-      }
-      //set amounts array for batch transfer
-      _amounts[i] = 1;
+      }      
     }
 
     // Pay out earned $BLOOD
-    if (owed > 0) {
-    
+    if (owed > 0) {    
       uint256 MAXIMUM_BLOOD_SUPPLY = ugGame.MAXIMUM_BLOOD_SUPPLY();      
       uint256 bloodTotalSupply = uBlood.totalSupply();
       uint256 normalizedSupply = bloodTotalSupply/1e18;
@@ -258,7 +245,7 @@ contract UGRaidClubs is Ownable, Pausable, ReentrancyGuard {
       return;
     }
     // makes sure to include any unaccounted $BLOOD 
-    //need to * 1000 to prevent claim amount being lower than rank staked causing a 0 result
+    //need to * 100000 to prevent claim amount being lower than level staked causing a 0 result
     uint256 bpr = bloodPerLevel;
     bpr += 100000 * (amount + _unaccountedRewards) / totalLevelsStaked / 1000000;
     bloodPerLevel = bpr;
@@ -303,69 +290,6 @@ contract UGRaidClubs is Ownable, Pausable, ReentrancyGuard {
   function setDevWallet(address newWallet) external onlyOwner {
     if(newWallet == address(0)) revert InvalidAddress();
     devWallet = newWallet;
-  }
-
-  //////////////////////////////////////
-  //     Packed Balance Functions     //
-  //////////////////////////////////////
-  // Operations for _updateIDBalance
-  enum Operations { Add, Sub }
-  //map raidId => raiders packed uint 16 bits
-  mapping(uint256 => uint256) internal raiders;
-  uint256 constant IDS_BITS_SIZE =16;
-  uint256 constant IDS_PER_UINT256 = 16;
-  uint256 constant RAID_IDS_BIT_SIZE = 32;
-
-  function _viewUpdateBinValue(
-    uint256 _binValues, 
-    uint256 bitsize, 
-    uint256 _index, 
-    uint256 _amount, 
-    Operations _operation
-  ) internal pure returns (uint256 newBinValues) {
-
-    uint256 shift = bitsize * _index;
-    uint256 mask = (uint256(1) << bitsize) - 1;
-    
-    if (_operation == Operations.Add) {
-      newBinValues = _binValues + (_amount << shift);
-      require(newBinValues >= _binValues, " OVERFLOW2");
-      require(
-        ((_binValues >> shift) & mask) + _amount < 2**bitsize, // Checks that no other id changed
-        "OVERFLOW1"
-      );
-  
-    } else if (_operation == Operations.Sub) {
-      
-      newBinValues = _binValues - (_amount << shift);
-      require(newBinValues <= _binValues, " UNDERFLOW");
-      require(
-        ((_binValues >> shift) & mask) >= _amount, // Checks that no other id changed
-        "viewUpdtBinVal: UNDERFLOW"
-      );
-
-    } else {
-      revert("viewUpdtBV: INVALID_WRITE"); // Bad operation
-    }
-
-    return newBinValues;
-  }
-
-  function getIDBinIndex(uint256 _id) private pure returns (uint256 bin, uint256 index) {
-    bin = _id / IDS_PER_UINT256;
-    index = _id % IDS_PER_UINT256;
-    return (bin, index);
-  }
-
-  function getValueInBin(uint256 _binValues, uint256 bitsize, uint256 _index)
-    public pure returns (uint256)
-  {
-    // Mask to retrieve data for a given binData
-    uint256 mask = (uint256(1) << bitsize) - 1;
-    
-    // Shift amount
-    uint256 rightShift = bitsize * _index;
-    return (_binValues >> rightShift) & mask;
   }
 
   /** ONLY ADMIN FUNCTIONS */

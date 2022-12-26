@@ -7,11 +7,12 @@ import "../UGNFT.sol";
 import "../UGFYakuza.sol";
 import "../UGYakDen.sol";
 import "../UGRaid.sol";
- import "../UGgame.sol";
- import "../UGWeapons.sol";
- import "../Randomizer.sol";
- import "../UGArena.sol";
- import '../RaidEntry.sol';
+import "../UGgame.sol";
+import "../UGWeapons.sol";
+import "../Randomizer.sol";
+import "../UGArena.sol";
+import '../RaidEntry.sol';
+import '../UGFightClubLane.sol';
 // import "../interfaces/IUBlood.sol";
 //import "../interfaces/IUGNFT2.sol";
 import "../interfaces/IUNFT.sol";
@@ -64,8 +65,8 @@ contract UGNFTsTest is DSTest {
     address public owner;
     address public user1 = address(0x1337);
     address public user2 = address(0x1338);
-    address public user3 = address(0x1339);
-    address public user4 = address(0x1340);
+    // address public user3 = address(0x1339);
+    // address public user4 = address(0x1340);
     address public mockOwner = address (0xdeadbeef);
 
     // Deployments
@@ -79,6 +80,7 @@ contract UGNFTsTest is DSTest {
     Randomizer public randomizer;
     UGWeapons public ugWeapons;
     RaidEntry public raidEntry;
+    UGFightClubLane public fclubLane;
     // IUNFT public uNft;
     // Migrations public ugMigration;
     // IUGame public oldGameTest;
@@ -111,9 +113,10 @@ contract UGNFTsTest is DSTest {
         ugNFT =  new UGNFT(uri, name1, symbol1);
          uBLOOD = IUBlood(bloodContractTestnet);//testnet blood addy
          ugYakDen = new UGYakDen( address(ugFYakuza), bloodContractTestnet, mockOwner);
+         fclubLane = new UGFightClubLane( address(ugNFT), bloodContractTestnet, address(randomizer), mockOwner);
          ugArena = new UGArena(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(randomizer), address(ugYakDen));
          ugWeapons = new UGWeapons();
-         ugRaid = new UGRaid(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(randomizer), mockOwner, 20001);
+         ugRaid = new UGRaid(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(randomizer), mockOwner, address(ugYakDen), address(fclubLane));
       //   ugRaid = IUGRaid(ugRaidtestContract);
       //   //ugMigration = IUGMigration(ugMigrationContractTestnet);//testnet migration contract
       //   ugMigration = new Migrations(address(ugNFT),bloodContractTestnet, 0xb19A304598603bf3645fb6b06D27985581D44e5a, 0xe95d607EC03B6fC991FfBe86ad3841A951631c42, unftOldMock_testnet, address(ugArena), 0xE0BDf2e2EF2fda69B20dc54D224A64F99F640336 );//testnet migration contract
@@ -125,12 +128,13 @@ contract UGNFTsTest is DSTest {
 
         //forgesmith
          ugForgeSmith = new UGForgeSmith(address(ugNFT), address(ugFYakuza), address(uBLOOD), address(ugWeapons), address(ugRaid), address(ugArena));
-         ugGame = new UGgame(address(ugNFT),address(ugFYakuza),address(ugArena), address(ugRaid), bloodContractTestnet,  address(ugForgeSmith), mockOwner);
+         ugGame = new UGgame(address(ugNFT),address(ugFYakuza),address(ugArena), address(ugRaid), bloodContractTestnet,  address(ugForgeSmith), mockOwner, address(fclubLane));
         
         
        // ugArena.setPaused(false);
         ugArena.setGameContract(address(ugGame));
         ugYakDen.setGameContract(address(ugGame));
+        fclubLane.setGameContract(address(ugGame));
         //set Admins
         ugRaid.addAdmin(address(ugGame));
         ugArena.addAdmin(address(ugGame));
@@ -161,7 +165,6 @@ contract UGNFTsTest is DSTest {
         ugGame.setFightClubMintActive(true);
 
         ugRaid.setDevWallet(mockOwner);
-        ugRaid.setDevFightClubId(20001);
         ugRaid.addAdmin(address(raidEntry));
         ugWeapons.addAdmin(address(ugRaid));
         ugWeapons.addAdmin(address(ugForgeSmith));
@@ -183,7 +186,8 @@ contract UGNFTsTest is DSTest {
         uBLOOD.mint(user1, 60000000 ether);
         uBLOOD.mint(user2, 60000000 ether);
         uBLOOD.addAdmin(address(ugArena));
-        uBLOOD.addAdmin(address(ugYakDen));
+        uBLOOD.addAdmin(address(ugYakDen));        
+        uBLOOD.addAdmin(address(fclubLane));
         hevm.stopPrank();
         
         ugFYakuza.addAdmin(address(this));
@@ -214,13 +218,7 @@ contract UGNFTsTest is DSTest {
        
         hevm.stopPrank();
 
-        hevm.startPrank(user3, user3);
        
-        hevm.stopPrank();
-
-        hevm.startPrank(user4, user4);
-       
-        hevm.stopPrank();
 
                 
         // bal = uBLOOD.balanceOf(user1);
@@ -239,7 +237,7 @@ contract UGNFTsTest is DSTest {
             _fighterIds[i-2] = i;
         }
 
-          batchMintFighters(user1, lvl,amt, true,1);
+          batchMintFighters(user1, lvl,amt, false,1);
           // batchMintFighters(user1, lvl,amt, false,61);
         //   batchMintFighters(user2, lvl,amt, true,121);
         //  batchMintFighters(user2, lvl,amt, false,181);
@@ -290,15 +288,15 @@ contract UGNFTsTest is DSTest {
       UGYakDen.Stake[] memory yakStakes = ugYakDen.getStakedYakuzas(IdsUser);
       hevm.stopPrank();
 
-      uint bloodPerRank = ugYakDen.getBloodPerRank();
-      uint ttlRankStaked = ugYakDen.totalRankStaked();
-      uint ttlYakuzaStaked = ugYakDen.totalYakuzaStaked();
+      ugYakDen.getBloodPerRank();
+      ugYakDen.totalRankStaked();
+      ugYakDen.totalYakuzaStaked();
 
       //prank as admin
       hevm.prank(address(ugArena));
       ugYakDen.payRevenueToYakuza(1000000);
 
-      bloodPerRank = ugYakDen.getBloodPerRank();
+      ugYakDen.getBloodPerRank();
 
       hevm.warp(10000);
       uint256[] memory ids = new uint256[](2);
@@ -315,13 +313,13 @@ contract UGNFTsTest is DSTest {
       ugYakDen.payRevenueToYakuza(1000000);
 
       hevm.warp(10020);
-      uint rew = ugYakDen.calculateAllStakingRewards(IdsUser);
-      bloodPerRank = ugYakDen.getBloodPerRank();
-      ttlRankStaked = ugYakDen.totalRankStaked();
+      ugYakDen.calculateAllStakingRewards(IdsUser);
+      ugYakDen.getBloodPerRank();
+      ugYakDen.totalRankStaked();
       hevm.prank(user1, user1);
       ugYakDen.claimManyFromArena(ids, true);
-      bloodPerRank = ugYakDen.getBloodPerRank();
-      ttlRankStaked = ugYakDen.totalRankStaked();      
+      ugYakDen.getBloodPerRank();
+       ugYakDen.totalRankStaked();      
     }
 
     function testMintBatchFighters() public {
