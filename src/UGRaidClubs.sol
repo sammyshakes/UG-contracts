@@ -3,6 +3,7 @@
 pragma solidity 0.8.13;
 
 import "./ERC1155/utils/Ownable.sol";
+import "./ERC1155/utils/Pausable.sol";
 import "./ERC1155/interfaces/IERC1155.sol";
 import "./interfaces/IUBlood.sol";
 import "./interfaces/IUGArena.sol";
@@ -10,11 +11,10 @@ import "./interfaces/IRandomizer.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract UGRaidClubs is Ownable, ReentrancyGuard {
+contract UGRaidClubs is Ownable, Pausable, ReentrancyGuard {
 
   struct Stake {
-    uint32 bloodPerLevel;
-    uint32 claimTimeStamp;
+    uint64 bloodPerLevel;
     uint32 stakeTimestamp;
     address owner;
   }
@@ -97,7 +97,7 @@ contract UGRaidClubs is Ownable, ReentrancyGuard {
   
   //Modifiers//
   modifier onlyAdmin() {
-    if(!_admins[msg.sender]) revert Unauthorized();
+    if(!_admins[_msgSender()]) revert Unauthorized();
     _;
   }
 
@@ -133,31 +133,6 @@ contract UGRaidClubs is Ownable, ReentrancyGuard {
     emit FightClubOwnerBloodRewardClaimed(msg.sender);
   } 
 
-   //returns 0 if token is no longer eligible for que (did not level up/ maintain or not staked)
-  function getFightClubInQueueAndRecycle( uint8 _levelTier, uint8 _raidSizeTier) private returns (uint256) {
-    //get packed value: id with fightclub size
-    uint256 id = removeFromQueue(fightClubQueue[_levelTier][_raidSizeTier], IDS_BITS_SIZE);
-    //uint256 unpackedId = id%2 ** 11;
-    //do not re-enter queue if has been unstaked since getting in queue
-    if(stakedFightclubOwners[id] == address(0)) return 0;
-    IUGNFT.ForgeFightClub memory fightclub = ugNFT.getForgeFightClub(id);
-    //and is right level and size, do not re-enter queue if fails this check
-    if(fightclub.size < _raidSizeTier || fightclub.level < _levelTier) return 0;
-    //if fight club has not been leveled up at least once in last week + 1 day auto unstake fightclub
-    if(fightclub.lastLevelUpgradeTime + 8 days < block.timestamp) {
-      //auto unstake if hasnt been already
-      _autoUnstakeFightClub(id);
-      return 0;
-    }
-
-    //add back to queue with current size
-    //unpackedId |= fightclub.size<<11;
-    addToQueue(fightClubQueue[_levelTier][_raidSizeTier], id, IDS_BITS_SIZE);
-    //check to see fight club has been leveled up at least once in last week
-    if(fightclub.lastLevelUpgradeTime + 7 days < block.timestamp) return 0;
-    return id;
-  }
-
   function stakeFightclubs(uint256[] calldata tokenIds) external nonReentrant {
     //make sure is owned by sender
     if(!ugNFT.checkUserBatchBalance(msg.sender, tokenIds)) revert InvalidTokenId();    
@@ -169,6 +144,7 @@ contract UGRaidClubs is Ownable, ReentrancyGuard {
   
   function _stakeFightclubs(address account, uint256[] calldata tokenIds, IUGNFT.ForgeFightClub[] memory fightclubs) private {
     uint256[] memory amounts = new uint256[](tokenIds.length);
+    Stake memory myStake;
     uint256 levelCount;
     uint256 currLevel;
     for(uint i; i < tokenIds.length; i++){
@@ -176,18 +152,87 @@ contract UGRaidClubs is Ownable, ReentrancyGuard {
       levelCount += (currLevel * fightclubs[i].size);
       stakedFightclubOwners[tokenIds[i]] = account;
       amounts[i] = 1;
+
+      myStake.bloodPerLevel = uint64(bloodPerLevel);
+      yStake.stakeTimestamp = uint32(block.timestamp);
+      myStake.owner = account; 
+
+      stakedFightclubs[tokenIds[i]] = myStake;
     }
+
     totalLevelsStaked += levelCount;
     totalFightClubsStaked += tokenIds.length;
-    ownerTotalStakedFightClubs[account] += tokenIds.length;
-
-    myStake.bloodPerLevel = uint32(bloodPerLevel);
-    myStake.claimTimestamp = uint32(block.timestamp);
-    myStake.stakeTimestamp = uint32(block.timestamp);
-    myStake.owner = account; 
+    ownerTotalStakedFightClubs[account] += tokenIds.length;     
 
     ugNFT.safeBatchTransferFrom(account, address(this), tokenIds, amounts, "");
     emit TokenStaked(account, tokenId);
+  }
+
+  function claimFightClubs(uint256[] calldata tokenIds, bool unstake) public whenNotPaused nonReentrant {
+    require(tokenIds.length > 0, "Empty Array");
+    Stake memory myStake;
+    IUGNFT.ForgeFightClub[] memory fightclubs = ugNFT.getForgeFightClubs(tokenIds);
+    if(tokenIds.length != fightclubs.length) revert MismatchArrays();
+    uint256[] memory _amounts = new uint256[](tokenIds.length);
+    uint256 owed = 0;
+    // Fetch the owner so we can give that address the $BLOOD.
+    // If the same address does not own all tokenIds this transaction will fail.
+    // This is especially relevant when the Game contract calls this function as the _msgSender() - it should NOT get the $BLOOD ofc.
+    address account = stakedFightclubs[tokenIds[0]].owner;
+
+    // The _admins[] check allows the Game contract to claim at level upgrades
+    // and raid contract when raiding.
+    if(account != _msgSender() && !_admins[_msgSender()]) revert InvalidOwner();
+
+    uint256 currLevel;
+    uint256 levelCount;
+  
+    for (uint256 i; i < fightclubs.length; i++) {     
+      currLevel = fightclub[i].level;    
+      levelCount += currLevel * fightclubs[i].size; 
+
+      account = stakedFightclubs[tokenIds[i]].owner;
+      owed += _calculateStakingRewards(tokenIds[i]);   
+
+      if (unstake) {
+        delete stakedFightclubs[tokenId]; // Delete old mapping
+      } else {
+        // Just claim rewards
+        Stake memory myStake;
+        myStake.bloodPerLevel = uint64(bloodPerLevel);
+        myStake.stakeTimestamp = uint32(block.timestamp);
+        myStake.owner = account;
+        // Reset stake
+        stakedFightclubs[tokenId] = myStake; 
+      }
+      //set amounts array for batch transfer
+      _amounts[i] = 1;
+    }
+    // Pay out earned $BLOOD
+     if (owed > 0) {
+      
+      uint256 MAXIMUM_BLOOD_SUPPLY = ugGame.MAXIMUM_BLOOD_SUPPLY();
+      
+      uint256 bloodTotalSupply = uBlood.totalSupply();
+      uint256 normalizedSupply = bloodTotalSupply/1e18;
+      // Pay out rewards as long as we did not reach max $BLOOD supply
+      if (normalizedSupply < MAXIMUM_BLOOD_SUPPLY ) {
+        if (normalizedSupply + owed > MAXIMUM_BLOOD_SUPPLY) { // If totalSupply + owed exceeds the maximum supply then pay out only the remainder
+          owed = MAXIMUM_BLOOD_SUPPLY - normalizedSupply; // Pay out the rest and that's it, we reached the maximum $BLOOD supply (for now)
+        }
+        // Pay $BLOOD to the owner
+        totalBloodEarned += owed;
+        uBlood.mint(account, owed * 1 ether);
+      }
+    }
+  
+    if(unstake) {
+      totalLevelStaked -= levelCount; // Remove levels from total staked
+      totalFightClubsStaked -= tokenIds.length; // Decrease the number of fightclubs staked
+      ugNFT.safeBatchTransferFrom(address(this), account, tokenIds, _amounts, ""); // send back Fighter
+    }
+    
+    emit TokensClaimed(account, tokenIds, unstake, owed, block.timestamp);
   }
 
   function unstakeFightclubs(uint256[] calldata tokenIds) external nonReentrant {
@@ -199,17 +244,17 @@ contract UGRaidClubs is Ownable, ReentrancyGuard {
       currLevel = fighclubs[i].level;
       levelCount += (currLevel * fightclubs[i].size);
       //make sure sender is clubowner
-      if(stakedFightclubOwners[tokenIds[i]] != msg.sender) revert InvalidTokenId();
+      if(stakedFightclubOwners[tokenIds[i]] != _msgSender()) revert InvalidTokenId();
       
       delete stakedFightclubOwners[tokenIds[i]];
       amounts[i] = 1;
     }
     totalLevelsStaked -= levelCount;
     totalFightClubsStaked -= tokenIds.length;
-    ownerTotalStakedFightClubs[msg.sender] -= tokenIds.length;
+    ownerTotalStakedFightClubs[_msgSender()] -= tokenIds.length;
 
-    ugNFT.safeBatchTransferFrom(address(this), msg.sender, tokenIds, amounts, "");
-    //emit TokenUnStaked(msg.sender, tokenIds);
+    ugNFT.safeBatchTransferFrom(address(this), _msgSender(), tokenIds, amounts, "");
+    //emit TokenUnStaked(_msgSender(), tokenIds);
   }
 
   function calculateStakingRewards(uint256 tokenId) external view returns (uint256 owed) {
@@ -217,27 +262,20 @@ contract UGRaidClubs is Ownable, ReentrancyGuard {
   }
 
  function calculateAllStakingRewards(uint256[] memory tokenIds) external view returns (uint256 owed) {
-    uint256[] memory yakuzas = ugFYakuza.getPackedFighters(tokenIds);
     for (uint256 i; i < tokenIds.length; i++) {
-      owed += _calculateStakingRewards(tokenIds[i], unPackFighter(yakuzas[i]));
+      owed += _calculateStakingRewards(tokenIds[i]);
     }
     return owed;
   }
 
   function _calculateStakingRewards(uint256 tokenId) private view returns (uint256 owed) {
     IUGNFT.ForgeFightClub memory fightclub = ugNFT.getForgeFightClub(tokenId);
-    Stake memory myStake = _yakuzaPatrol[tokenId];
-    // Calculate portion of $BLOOD based on rank
-    //if not expired
+    Stake memory myStake = stakedFightclubs[tokenId];
+    // Calculate portion of $BLOOD based on level * size
     if(block.timestamp <= myStake.claimTimeStamp){
       if(bloodPerLevel  > myStake.bloodPerRank) owed = (fightclub.level) * (fightclub.size) * (bloodPerLevel - myStake.bloodPerLevel);    
-    } else {//if fightclub expired
-      //get claim time ratio (block.timestamp - claimtimestamp) / (block.timestamp - stakeTimestamp)
-      uint256 claimRatio = 10000 * (block.timestamp - myStake.claimTimeStamp) / (block.timestamp - myStake.stakeTimestamp);
-      owed = claimRatio * (fightclub.level) * (fightclub.size) * (bloodPerLevel - myStake.bloodPerLevel) / 10000;
-    }
-    
-    return (owed);
+    }    
+    return owed;
   }
 
   function burnBlood(address account, uint256 amount) private {
