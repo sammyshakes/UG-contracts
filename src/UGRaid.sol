@@ -147,18 +147,16 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   uint16 constant BUTTERFLY_TIER = 10;//levels 28 and up
   uint16 constant MACHETE_TIER = 14;//levels 40 and up
   uint16 constant KATANA_TIER = 18;//levels 52 and up
-  
-  uint16 constant MAX_SIZE_TIER = 4;
 
-  uint256 constant BRUTALITY_WEIGHT = 40;
+  uint256 constant BRUTALITY_WEIGHT = 45;
   uint256 constant YAKUZA_INTIMIDATION_WEIGHT = 5;
   
-  uint256 constant WEAPONS_WEIGHT = 30;
+  uint256 constant WEAPONS_WEIGHT = 25;
   
-  uint256 constant SWEAT_WEIGHT = 20;
-  uint256 constant SCARS_WEIGHT = 5;
-  uint256 private FIGHT_CLUB_BASE_CUT_PCT = 25;
-  uint256 private YAKUZA_BASE_CUT_PCT = 5;
+  uint256 constant SWEAT_WEIGHT = 15;
+  uint256 constant SCARS_WEIGHT = 10;
+  uint256 private FIGHT_CLUB_BASE_CUT_PCT = 10;
+  uint256 private YAKUZA_BASE_CUT_PCT = 10;
   uint256 private REFEREE_BASE_CUT_PCT = 10;
   uint256 public BASE_RAID_FEE = 100;
 
@@ -168,11 +166,9 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
 
   uint256 private MAX_RAIDERS_PER_REF = 100;
   uint256 private maxRaiderQueueLevelTier;
-  uint256 private maxRaiderQueueSizeTier;
   
   uint256 public ttlRaids;
-  address private devWallet;
-  
+  address private devWallet;  
 
   mapping(address => bool) private _admins;
   //maps level => size => Raider token Ids queue
@@ -215,7 +211,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     uint256[] memory scores;
     //i = levelTier , j = sizeTier start from highest and we need to limit fighters
      for(uint8 i=uint8(maxRaiderQueueLevelTier); i >= 1; i--){
-      for(uint8 j=uint8(maxRaiderQueueSizeTier); j >= 1; j--){
+      for(uint8 j=4; j >= 1; j--){//only 4 possible sizes
         //BEGINNING OF EACH FIGHTER QUEUE
         raidSize = j*5;        
         tempVal = getRaiderQueueLength( i, j);//tempVal is queuelength here
@@ -314,13 +310,12 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
       if (weaponMetal > 60) weaponMetal = 5;
 
       if (weapon <= 60) weapon = 1;
-      if (weapon > 95) weapon = 5;
-      if (weapon > 90) weapon = 4;
-      if (weapon > 85) weapon = 3;
-      if (weapon > 60) weapon = 2;
+      if (weapon > 97) weapon = 5;
+      if (weapon > 95) weapon = 4;
+      if (weapon > 80) weapon = 3;
+      if (weapon > 50) weapon = 2;
 
       weapon = weapon + weaponMetal;
-
     }
     
     
@@ -335,11 +330,19 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   }
 
   function getRaidCost(uint256 levelTier, uint256 sizeTier) public view returns (uint256 price) {
-      return (BASE_RAID_FEE * (2 + sizeTier-1) * levelTier * 3);
+    return (BASE_RAID_FEE * (2 + sizeTier-1) * levelTier * 3);
   }
 
   function getRaiderQueueLength(uint8 level, uint8 sizeTier) public view returns (uint16){
-   return _getQueueLength(RaiderQueue[level][sizeTier]);
+    return _getQueueLength(RaiderQueue[level][sizeTier]);
+  }
+
+  function getRaiderQueueLengths(uint256 sizeTier) external view returns (uint256[] memory){
+    uint256[] memory _queues = new uint256[](maxRaiderQueueLevelTier);
+    for(uint i=1; i<= _queues.length; i++){
+      _getQueueLength(RaiderQueue[i][sizeTier]);
+    }     
+    return _queues;
   }
 
   function claimRaiderBloodRewards() external nonReentrant {
@@ -372,27 +375,27 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   function _weaponScore(uint256 attackScore, uint256 seed) private pure returns(uint score, bool _isBroken){
     if (attackScore == 0 || attackScore%10 != 0) return (0, false);
     //get metal if fighter is equipped with an unbroken weapon
-    if (attackScore == 10){
+    if (attackScore == STEEL_ATTACK_SCORE){
       if ((seed <<= 8)%100 > 100 - STEEL_DURABILITY_SCORE) return (attackScore, false); 
       else return (0, true);
     }
-    if (attackScore == 20){
+    if (attackScore == BRONZE_ATTACK_SCORE){
       if ((seed <<= 8)%100 > 100 - BRONZE_DURABILITY_SCORE) return (attackScore, false); 
       else return (0, true);
     }
-    if (attackScore == 40){
+    if (attackScore == GOLD_ATTACK_SCORE){
       if ((seed <<= 8)%100 > 100 - GOLD_DURABILITY_SCORE) return (attackScore, false); 
       else return (0, true);
     }
-    if (attackScore == 60){
+    if (attackScore == PLATINUM_ATTACK_SCORE){
       if ((seed <<= 8)%100 > 100 - PLATINUM_DURABILITY_SCORE) return (attackScore, false); 
       else return (0, true);
     }
-    if (attackScore == 80){
+    if (attackScore == TITANIUM_ATTACK_SCORE){
       if ((seed <<= 8)%100 > 100 - TITANIUM_DURABILITY_SCORE) return (attackScore, false); 
       else return (0, true);
     }
-    if (attackScore == 100){
+    if (attackScore == DIAMOND_ATTACK_SCORE){
       return (attackScore, false); 
     }
   }
@@ -475,7 +478,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
             if(o == 0) weaponsToMint[raiderOwner][0][20*(raid.sizeTier)]++;
             if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][0][PLATINUM_ATTACK_SCORE]++;
             if(o == 2 && raid.sizeTier == 4) weaponsToMint[raiderOwner][0][GOLD_ATTACK_SCORE]++;
-          }             
+          }
           if(raid.levelTier >= CHAINS_TIER && raid.levelTier < BUTTERFLY_TIER){
             if(o == 0) weaponsToMint[raiderOwner][1][20*(raid.sizeTier)]++;
             if(o == 1 && raid.sizeTier == 4) weaponsToMint[raiderOwner][1][PLATINUM_ATTACK_SCORE]++;
@@ -567,8 +570,6 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
 
     for(uint i; i < _raidSize; i++){
      tickets[i] = getTicketInQueue(raid.levelTier,raid.sizeTier);
-      //mark that fighter has been removed from que if it hasnt already been marked as removed
-      if(viewIfRaiderIsInQueue(tickets[i].fighterId)) _updateIfRaiderIsInQueue(tickets[i].fighterId, Operations.Sub);
       if(yakuzaRoundActive){
         //returns 0 if lost yakuza intimidation round, 1 if survived, 100 if gets boost
         _yakScore = getYakuzaRoundScore(tickets[i].yakuzaFamily, yakuzaFamilyWinner);
@@ -578,8 +579,15 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
         }
        
       } else _yakScore = 0;
+
+      //mark that fighter has been removed from que if it hasnt already been marked as removed
+      //if fighter was removed from queue manually, treat as if kicked out by yakuza
+      if(viewIfRaiderIsInQueue(tickets[i].fighterId)) _updateIfRaiderIsInQueue(tickets[i].fighterId, Operations.Sub);
+      else _yakScore = 0;
+
       //record yak result to the yakuzaFamily ticket memory slot
       tickets[i].yakuzaFamily = _yakScore;
+
       //if fighter survives yakuza round
       if(!yakuzaRoundActive || _yakScore > 0){
         //check if fighter has max sweat or max scars
@@ -604,7 +612,6 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   
     return raid;
   }
-
 
   function getTicketInQueue( uint256 _levelTier, uint256 _raidSizeTier) private returns (RaidEntryTicket memory) {
     RaidEntryTicket memory ticket;
@@ -637,11 +644,8 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
       //add to queue and convert fighterid to raider id to use a smaller storage slot
       addToQueueFullUint(RaiderQueue[levelTier][uint8(packedTickets[i])], packedTickets[i]);
       maxRaiderQueueLevelTier = levelTier  > maxRaiderQueueLevelTier ? levelTier  : maxRaiderQueueLevelTier;    
-      maxRaiderQueueSizeTier = sizeTier  > maxRaiderQueueSizeTier ? sizeTier  : maxRaiderQueueSizeTier;   
     }
   }    
-
-
 
   function _getQueueLength(Queue storage queue) private view returns (uint16){
     return uint16(queue.end - queue.start);
@@ -842,19 +846,6 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     return (_binValues >> rightShift) & mask;
   }
 
-  function viewIfRaiderIsInQueue( uint256 tokenId) public view returns(bool) {
-    uint id = tokenId;
-    // Get bin and index of _id
-    uint256 bin = id / 256;
-    uint256 index = id % 256;
-    uint256 _binValue = raiderInQue[bin];
-
-    _binValue = _binValue & (1 << index);
-    // return balance
-    return _binValue > 0;
-  }  
-
-
   function packTicket(RaidEntryTicket memory _ticket) 
     private pure returns (uint256)
   {
@@ -893,23 +884,35 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   function unpackTicket(uint256 packedTicket) 
     private pure returns (RaidEntryTicket memory _ticket)
   {
-      _ticket.sizeTier = uint8(packedTicket);
-      _ticket.fighterLevel = uint8(packedTicket>>8);
-      _ticket.yakuzaFamily = uint8(packedTicket>>16);
-      _ticket.courage = uint8(packedTicket>>24);
-      _ticket.brutality = uint8(packedTicket>>32);
-      _ticket.cunning = uint8(packedTicket>>40);
-      _ticket.knuckles = uint8(packedTicket>>48);
-      _ticket.chains = uint8(packedTicket>>56);
-      _ticket.butterfly = uint8(packedTicket>>64);
-      _ticket.machete = uint8(packedTicket>>72);
-      _ticket.katana = uint8(packedTicket>>80);
-      _ticket.scars = uint16(packedTicket>>96);
-      _ticket.sweat = uint32(packedTicket>>128);
-      _ticket.fighterId = uint32(packedTicket>>160);
-      _ticket.entryFee = uint32(packedTicket>>192);
-      return _ticket;
+    _ticket.sizeTier = uint8(packedTicket);
+    _ticket.fighterLevel = uint8(packedTicket>>8);
+    _ticket.yakuzaFamily = uint8(packedTicket>>16);
+    _ticket.courage = uint8(packedTicket>>24);
+    _ticket.brutality = uint8(packedTicket>>32);
+    _ticket.cunning = uint8(packedTicket>>40);
+    _ticket.knuckles = uint8(packedTicket>>48);
+    _ticket.chains = uint8(packedTicket>>56);
+    _ticket.butterfly = uint8(packedTicket>>64);
+    _ticket.machete = uint8(packedTicket>>72);
+    _ticket.katana = uint8(packedTicket>>80);
+    _ticket.scars = uint16(packedTicket>>96);
+    _ticket.sweat = uint32(packedTicket>>128);
+    _ticket.fighterId = uint32(packedTicket>>160);
+    _ticket.entryFee = uint32(packedTicket>>192);
+    return _ticket;
   }
+
+  function viewIfRaiderIsInQueue( uint256 tokenId) public view returns(bool) {
+    uint id = tokenId;
+    // Get bin and index of _id
+    uint256 bin = id / 256;
+    uint256 index = id % 256;
+    uint256 _binValue = raiderInQue[bin];
+
+    _binValue = _binValue & (1 << index);
+    // return balance
+    return _binValue > 0;
+  }        
 
   function addIfRaidersInQueue(uint256[] memory tokenIds) external onlyAdmin {
     for(uint i; i<tokenIds.length; i++){
@@ -942,8 +945,11 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   function clearRaiderQueue(uint8 level, uint8 size) external onlyOwner {
     delete RaiderQueue[level][size];
   }
-  function removeIfRaiderIsInQueue (uint256 tokenId) external onlyOwner {
-    _updateIfRaiderIsInQueue(  tokenId, Operations.Sub);
+  function removeRaidersFromQueue (uint256[] calldata tokenIds) external {
+    for(uint i; i<tokenIds.length; i++){
+      require(ugArena.getStakeOwner(tokenIds[i]) == msg.sender, "InvalidOwner");
+      if(viewIfRaiderIsInQueue(tokenIds[i])) _updateIfRaiderIsInQueue(tokenIds[i], Operations.Sub);
+    }    
   }
   ////////////////////////////////////////////////
 

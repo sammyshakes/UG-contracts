@@ -11,9 +11,6 @@ import "./interfaces/IUBlood.sol";
 import "./interfaces/IUGArena.sol";
 import "./interfaces/IRaidEntry.sol";
 
-
-import "./test/console.sol";
-
 interface iugWeapons {
   function burn(address _from, uint256 _id, uint256 _amount) external;  
   function mint(address _from, uint256 _id, uint256 _amount, bytes calldata data) external;  
@@ -120,7 +117,7 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
             ttlBloodEntryFee += bloodEntryFee;              
             if(raidSize == 4) size4Raids++;
         }
-        console.log("here");
+
         if(size4Raids == 0){
             //update raid timer for size 4 raids
             uint256 count;

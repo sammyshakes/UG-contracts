@@ -92,7 +92,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
   
   
   // maps tokenId to Fighter
-  mapping(uint256 => Stake) public _fighterArena;
+  mapping(uint256 => Stake) private _fighterArena;
   mapping(address => uint256) private _ownersOfStakedRings;
   mapping(address => uint256) private _ownersOfStakedAmulets;
   mapping(uint256 => uint256) private _ringAmuletUnstakeTimes;  

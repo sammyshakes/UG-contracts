@@ -67,6 +67,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   //user total balances bit indexes
   uint256 internal constant YAKUZA_INDEX  = 1;
   uint256 public YAKUZA_BASE_RANK_COST = 50000;
+  uint256 public YAKUZA_TIER_RANK_COST = 25000;
 
   // total Yakuza staked
   uint256 public totalYakuzaStaked;
@@ -350,8 +351,9 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   }
 
   function _getYakuzaBloodCostPerRank(uint16 rank) private view returns (uint256 price) {
-    if (rank == 0) return 0;        
-    return (YAKUZA_BASE_RANK_COST * rank);
+    if (rank == 0) return 0;  
+    if (rank <= 10) return YAKUZA_BASE_RANK_COST * rank;
+    return YAKUZA_TIER_RANK_COST * rank;
   }
 
   function getYakuzaRankUpBloodCost(uint16 currentRank, uint256 ranksToUpgrade) public view  returns (uint256 totalBloodCost) {

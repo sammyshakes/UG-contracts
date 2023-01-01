@@ -16,7 +16,7 @@ interface IUGgame{
     function levelUpFighters(uint256[] calldata, uint256[] memory, bool) external returns(uint256);
     function levelUpRing(uint256, uint256) external returns(uint256);
     function levelUpAmulet(uint256, uint256) external returns(uint256);
-    function levelUpFightClubs(uint256[] calldata, uint256[] memory, uint256[] memory) external returns(uint256);
+    function levelUpFightClubs(uint256[] calldata, uint256[] memory, uint256[] memory, bool) external returns(uint256);
     function levelUpForges(uint256[] calldata, uint256[] memory) external returns(uint256);
     function sizeUpForges(uint256[] calldata) external returns(uint256);
     function getFightClubLevelUpBloodCost(uint16, uint16, uint8, uint8) external view  returns(uint256);

@@ -92,15 +92,15 @@ contract UGNFTsTest is DSTest {
     uint8 lvl;
 
     function setUp() public {
-      //   address oldGameTestnet = 0xE0BDf2e2EF2fda69B20dc54D224A64F99F640336;
-         address bloodOwnerTestnet = 0x5b8F11C2c1E33f0857c12Da896bF7c86A8101023;//testnet blood owner
-         address bloodContractTestnet = 0x649A53b481031ff57367F672e07d0A488ad421d9;//testnet blood addy
-      //  // address ugMigrationContractTestnet = 0x110Bb92C476C6FDC55C1EA1203e54bB2833d2A8a;//testnet blood addy
-      //   address unftOldMock_testnet = 0x8a169361770A0d74818e7129d1E2118207168B5e;//testnet old unft
-      //   // address ugNFTTestContract = 0x4Fb487506cCCFC12B7E3AF29B68801039D83B4B2;
-      //   address ugNFTTestContract = 0x5995693D2bF851731f0C696e95005aF39E7B91F3;
-      //   address ugRaidtestContract = 0xF7FD054793165525d85FBEAb9F290eCEf6B65cb8;
-      //   address ugArenaTestContract = 0x6eDeA9530549B67B3eB063280CD61e7d41806791;
+        // address oldGameTestnet = 0xE0BDf2e2EF2fda69B20dc54D224A64F99F640336;
+        address bloodOwnerTestnet = 0x5b8F11C2c1E33f0857c12Da896bF7c86A8101023;//testnet blood owner
+        address bloodContractTestnet = 0x649A53b481031ff57367F672e07d0A488ad421d9;//testnet blood addy
+        // address ugMigrationContractTestnet = 0x110Bb92C476C6FDC55C1EA1203e54bB2833d2A8a;//testnet blood addy
+        // address unftOldMock_testnet = 0x8a169361770A0d74818e7129d1E2118207168B5e;//testnet old unft
+        // address ugNFTTestContract = 0x4Fb487506cCCFC12B7E3AF29B68801039D83B4B2;
+        // address ugNFTTestContract = 0x5995693D2bF851731f0C696e95005aF39E7B91F3;
+        // address ugRaidtestContract = 0xF7FD054793165525d85FBEAb9F290eCEf6B65cb8;
+        // address ugArenaTestContract = 0x6eDeA9530549B67B3eB063280CD61e7d41806791;
         string memory uri = "https://the-u.club/reveal/";
         string memory name = "FYakuza";
         string memory symbol = "UGFYakuza";
@@ -111,20 +111,20 @@ contract UGNFTsTest is DSTest {
         randomizer = new Randomizer();
         ugFYakuza = new UGFYakuza(uri, name, symbol);
         ugNFT =  new UGNFT(uri, name1, symbol1);
-         uBLOOD = IUBlood(bloodContractTestnet);//testnet blood addy
-         ugYakDen = new UGYakDen( address(ugFYakuza), bloodContractTestnet, mockOwner);
-         fclubLane = new UGFightClubLane( address(ugNFT), bloodContractTestnet, address(randomizer), mockOwner);
-         ugArena = new UGArena(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(randomizer), address(ugYakDen));
-         ugWeapons = new UGWeapons();
-         ugRaid = new UGRaid(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(randomizer), mockOwner, address(ugYakDen), address(fclubLane));
-      //   ugRaid = IUGRaid(ugRaidtestContract);
-      //   //ugMigration = IUGMigration(ugMigrationContractTestnet);//testnet migration contract
-      //   ugMigration = new Migrations(address(ugNFT),bloodContractTestnet, 0xb19A304598603bf3645fb6b06D27985581D44e5a, 0xe95d607EC03B6fC991FfBe86ad3841A951631c42, unftOldMock_testnet, address(ugArena), 0xE0BDf2e2EF2fda69B20dc54D224A64F99F640336 );//testnet migration contract
+        uBLOOD = IUBlood(bloodContractTestnet);//testnet blood addy
+        ugYakDen = new UGYakDen( address(ugFYakuza), bloodContractTestnet, mockOwner);
+        fclubLane = new UGFightClubLane( address(ugNFT), bloodContractTestnet, address(randomizer), mockOwner);
+        ugArena = new UGArena(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(randomizer), address(ugYakDen));
+        ugWeapons = new UGWeapons();
+        ugRaid = new UGRaid(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(randomizer), mockOwner, address(ugYakDen), address(fclubLane));
+        // ugRaid = IUGRaid(ugRaidtestContract);
+        // ugMigration = IUGMigration(ugMigrationContractTestnet);//testnet migration contract
+        // ugMigration = new Migrations(address(ugNFT),bloodContractTestnet, 0xb19A304598603bf3645fb6b06D27985581D44e5a, 0xe95d607EC03B6fC991FfBe86ad3841A951631c42, unftOldMock_testnet, address(ugArena), 0xE0BDf2e2EF2fda69B20dc54D224A64F99F640336 );//testnet migration contract
        
-      //   uNft = IUNFT(unftOldMock_testnet);
-      //   oldGameTest = IUGame(oldGameTestnet);
+        // uNft = IUNFT(unftOldMock_testnet);
+        // oldGameTest = IUGame(oldGameTestnet);
 
-      raidEntry = new RaidEntry( address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(ugRaid), address(bloodOwnerTestnet));
+        raidEntry = new RaidEntry( address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(ugRaid), address(bloodOwnerTestnet));
 
         //forgesmith
          ugForgeSmith = new UGForgeSmith(address(ugNFT), address(ugFYakuza), address(uBLOOD), address(ugWeapons), address(ugRaid), address(ugArena));
@@ -136,6 +136,7 @@ contract UGNFTsTest is DSTest {
         ugYakDen.setGameContract(address(ugGame));
         fclubLane.setGameContract(address(ugGame));
         //set Admins
+        fclubLane.addAdmin(address(ugGame));
         ugRaid.addAdmin(address(ugGame));
         ugArena.addAdmin(address(ugGame));
         ugArena.addAdmin(address(ugRaid));
@@ -197,7 +198,6 @@ contract UGNFTsTest is DSTest {
         hevm.startPrank(user1, user1);
         // ugFYakuza.setApprovalForAll(address(this), true);
         // ugNFT.setApprovalForAll(address(this), true);
-     //   ugNFT.setApprovalForAll(address(ugForgeSmith), true);
      //   ugWeapons.setApprovalForAll(address(this), true);
         ugFYakuza.setApprovalForAll(address(ugArena), true);
         ugFYakuza.setApprovalForAll(address(ugYakDen), true);
@@ -212,13 +212,13 @@ contract UGNFTsTest is DSTest {
         hevm.startPrank(user2, user2);
         ugFYakuza.setApprovalForAll(address(ugArena), true);
         ugNFT.setApprovalForAll(address(ugArena), true);
+        ugNFT.setApprovalForAll(address(ugYakDen), true);
         ugNFT.setApprovalForAll(address(ugForgeSmith), true);
         ugFYakuza.setApprovalForAll(address(ugRaid), true);
+        ugFYakuza.setApprovalForAll(address(ugYakDen), true);
         ugNFT.setApprovalForAll(address(ugRaid), true);
        
-        hevm.stopPrank();
-
-       
+        hevm.stopPrank();      
 
                 
         // bal = uBLOOD.balanceOf(user1);
@@ -237,9 +237,9 @@ contract UGNFTsTest is DSTest {
             _fighterIds[i-2] = i;
         }
 
-          batchMintFighters(user1, lvl,amt, false,1);
+          batchMintFighters(user1, lvl,amt, true,1);
           // batchMintFighters(user1, lvl,amt, false,61);
-        //   batchMintFighters(user2, lvl,amt, true,121);
+          batchMintFighters(user2, lvl,amt, false,121);
         //  batchMintFighters(user2, lvl,amt, false,181);
      
     }
@@ -360,7 +360,6 @@ contract UGNFTsTest is DSTest {
         IdsUser = ugArena.stakedByOwner(user1);
 
         
- //    IdsUser = ugArena.getStakedYakuzaIDsForUser(user1);
         ugGame.mintRing();
         ugGame.mintAmulet();
       // ugArena.stakedByOwner(user1); 
@@ -386,15 +385,13 @@ contract UGNFTsTest is DSTest {
 
        hevm.startPrank(user2, user2);
     //   ugFYakuza.safeBatchTransferFrom( user2, user1, ugFYakuza.walletOfOwner(user2), createAmountsArray(numfighters, 1, 0, 1),"" );
-    //   IdsUser = ugFYakuza.walletOfOwner(user1);
+      IdsUser = ugFYakuza.walletOfOwner(user2);
     //   numfighters = ugFYakuza.balanceOf(user1);
             ugGame.mintRing();
         ugGame.mintAmulet();
         hevm.warp(4 days + 2);
     //test stake    
-      //   ugArena.stakeManyToArena( ugFYakuza.walletOfOwner(user2));
-      //   IdsUser = ugArena.getStakedFighterIDsForUser(user2);
-      // IdsUser = ugArena.getStakedYakuzaIDsForUser(user2);
+        ugYakDen.stakeManyToArena( IdsUser);
 
      
 
@@ -405,23 +402,25 @@ contract UGNFTsTest is DSTest {
     //   ugArena.stakeAmulet(ugNFT.getNftIDsForUser(user2, 3)[0]);
     // //   IdsUser = ugFYakuza.walletOfOwner(user2);
     // //   numfighters = ugFYakuza.balanceOf(user2);
-    //   hevm.stopPrank();
+      hevm.stopPrank();
+
+      hevm.prank(address(ugArena));
+      ugYakDen.payRevenueToYakuza(100000);
 
     //   hevm.startPrank(user1, user1);
 
       
 
-    //     // ugArena.stakedByOwner(user1);
-    //     // IdsUser = ugArena.getStakedFighterIDsForUser(user1);
-    //     // IdsUser = ugArena.getStakedFighterIDsForUser(user2);
-    //     // //ugArena.getStakedYakuzaIDsForUser(user1);
+        IdsUser = ugArena.stakedByOwner(user1);
+        IdsUser = ugArena.stakedByOwner(user2);
+        
     //     // IdsUser = ugFYakuza.walletOfOwner(address(ugArena));
     //     // IdsUser = ugFYakuza.walletOfOwner(user1);
 
-    //     // ugArena.numUserStakedFighters(user1);
+        ugArena.numUserStakedFighters(user1);
     //     // ugArena.numUserStakedFighters(user2);
-    //     // ugArena.numUserStakedYakuza(user1);
-    //     // ugArena.numUserStakedYakuza(user2);
+    //     // ugYakDen.numUserStakedYakuza(user1);
+    //     // ugYakDen.numUserStakedYakuza(user2);
 
 
     //     hevm.warp(9 days);   
@@ -453,8 +452,8 @@ contract UGNFTsTest is DSTest {
     //     IdsUser = ugNFT.getNftIDsForUser(user2, 3);
     // hevm.stopPrank();
 
-    //  hevm.startPrank(user1, user1);
-    //     ugGame.mintFightClubs(1);
+     hevm.startPrank(user1, user1);
+        ugGame.mintFightClubs(2);
         
         
     //     ugGame.mintForges(1);
@@ -462,12 +461,12 @@ contract UGNFTsTest is DSTest {
     //     ugGame.levelUpForges(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 5));
     //     ugForgeSmith.stakeForges(IdsUser);
 
-    //     IdsUser = ugNFT.getNftIDsForUser(user1, FIGHT_CLUB_INDEX);
+        IdsUser = ugNFT.getNftIDsForUser(user1, FIGHT_CLUB_INDEX);
 
-    //     for(uint i; i <2;i++){
-    //         bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 2), createAmountsArray(IdsUser.length, 1,0,2));
-    //       //  console.log("blood cost to level up fight clubs user 1 ", bal);
-    //     }
+        for(uint i; i <2;i++){
+            bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 2), createAmountsArray(IdsUser.length, 1,0,2), false);
+           console.log("blood cost to level up fight clubs user 1 ", bal);
+        }
     //     for(uint i; i <2;i++){
     //         bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 1), createAmountsArray(IdsUser.length, 0,0,1));
     //       //  console.log("blood cost to level up fight clubs user 1 ", bal);
@@ -477,7 +476,7 @@ contract UGNFTsTest is DSTest {
     //     //   ugGame.levelUpFighters(stakedIdsUser, createAmountsArray(stakedIdsUser.length, 1, 0, 1), true);
         
 
-    //     hevm.stopPrank();
+        hevm.stopPrank();
 
     //     //  hevm.startPrank(user2, user2);
     //     // ugGame.mintFightClubs(1);

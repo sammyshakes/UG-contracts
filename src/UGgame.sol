@@ -14,6 +14,8 @@ import "./interfaces/IUGRaid.sol";
 import "./interfaces/IUGgame.sol";
 import "./interfaces/IUGForgeSmith.sol";
 
+import "./test/console.sol";
+
 interface iUGFightClubLane {
   function claimFightClubs(uint256[] memory tokenIds, bool unstake) external returns(uint256[] memory) ;  
 }
@@ -248,9 +250,10 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     }
 
     function levelUpFightClubs(
-        uint256[] calldata tokenIds, 
+        uint256[] memory tokenIds, 
         uint256[] memory _upgradeLevels, 
-        uint256[] memory _upgradeSizes
+        uint256[] memory _upgradeSizes,
+        bool _isStaked
     ) external whenNotPaused nonReentrant onlyEOA returns (uint256 totalBloodCost) {   
         if(tokenIds.length != _upgradeLevels.length) revert MismatchArrays(); 
         if(tokenIds.length != _upgradeSizes.length) revert MismatchArrays(); 
@@ -260,12 +263,13 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
             totalBloodCost += getFightClubLevelUpBloodCost(fclub.level, fclub.size,  _upgradeLevels[i] == 1 ? 1 : 0, _upgradeSizes[i] == 1 ? 1 : 0);
             
             if(_upgradeLevels[i] == 1) _upgradeLevels[i] += 1;
-            if(_upgradeSizes[i] == 1) _upgradeSizes[i] += 1;
-
-            fclubLane.claimFightClubs(tokenIds, false);
+            if(_upgradeSizes[i] == 1) _upgradeSizes[i] += 1;           
                     
         }  
-              
+        //only claim if staked
+        if(_isStaked) fclubLane.claimFightClubs(tokenIds, false);
+        console.log('here');
+        console.log('totalBloodCost', totalBloodCost);      
         burnBlood(_msgSender(), totalBloodCost);
         //level up fight clubs
         ugNFT.levelUpFightClubsForges(tokenIds,  _upgradeSizes, _upgradeLevels)[0];

@@ -63,9 +63,6 @@ contract UGFightClubLane is Ownable, Pausable, ReentrancyGuard {
   //////////////////////////////////////////
   uint16 private DEV_CUT = 5;
   uint256 constant FIGHT_CLUB = 20000;
-  
-  uint256 private FIGHT_CLUB_BASE_CUT_PCT = 25;
-  uint256 private YAKUZA_BASE_CUT_PCT = 5;
 
   uint256 public totalFightClubsStaked;
   uint256 public totalLevelsStaked;  
@@ -157,7 +154,8 @@ contract UGFightClubLane is Ownable, Pausable, ReentrancyGuard {
     // If the same address does not own all tokenIds this transaction will fail.
     // This is especially relevant when the Game contract calls this function as the _msgSender() - it should NOT get the $BLOOD ofc.
     address account = stakedFightclubs[tokenIds[0]].owner;    
-
+    
+    Stake memory myStake;
     uint256 currLevel;
     uint256 levelCount;
   
@@ -183,7 +181,6 @@ contract UGFightClubLane is Ownable, Pausable, ReentrancyGuard {
 
       } else {
         // Just claim rewards
-        Stake memory myStake;
         myStake.bloodPerLevel = uint64(bloodPerLevel);
         myStake.stakeTimestamp = uint32(block.timestamp);
         myStake.owner = account;
@@ -191,7 +188,7 @@ contract UGFightClubLane is Ownable, Pausable, ReentrancyGuard {
         stakedFightclubs[tokenIds[i]] = myStake; 
       }      
     }
-
+    
     // Pay out earned $BLOOD
     if (owed > 0) {    
       uint256 MAXIMUM_BLOOD_SUPPLY = ugGame.MAXIMUM_BLOOD_SUPPLY();      
@@ -213,7 +210,6 @@ contract UGFightClubLane is Ownable, Pausable, ReentrancyGuard {
       ownerTotalStakedFightClubs[_msgSender()] -= tokenIds.length;
       ugNFT.safeBatchTransferFrom(address(this), account, tokenIds, _amounts, ""); // send back Fighter
     }
-
   }
 
   function calculateStakingRewards(uint256 tokenId) external view returns (uint256 owed) {
