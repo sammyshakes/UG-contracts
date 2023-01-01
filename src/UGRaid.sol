@@ -20,8 +20,8 @@ interface iUGYakDen {
   function payRevenueToYakuza(uint256 amount) external;  
 }
 
-interface iFightClubLane {
-  function payRevenueToFightCLubs(uint256 amount) external;  
+interface iFightClubAlley {
+  function payRevenueToFightClubs(uint256 amount) external;  
 }
 
 contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
@@ -41,7 +41,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     address _randomizer,
     address _devWallet,
     address _yakDen,
-    address _fclubLane
+    address _fclubAlley
   ) {
     ierc1155FY = IERC1155(_ugFYakuza);
     ugNFT = IUGNFT(_ugnft);
@@ -52,7 +52,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     randomizer = IRandomizer(_randomizer);    
     devWallet = _devWallet;
     yakDen = iUGYakDen(_yakDen);
-    fclubLane = iFightClubLane(_fclubLane);
+    fclubAlley = iFightClubAlley(_fclubAlley);
 
     attackScoreToWeaponIndex[BRONZE_ATTACK_SCORE] = BRONZE;
     attackScoreToWeaponIndex[GOLD_ATTACK_SCORE] = GOLD_WEAPON;
@@ -72,7 +72,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   iUGWeapons private ugWeapons;
   IRandomizer private randomizer; 
   iUGYakDen public yakDen;
-  iFightClubLane public fclubLane;
+  iFightClubAlley public fclubAlley;
 
   //////////////////////////////////
   //          EVENTS             //
@@ -319,7 +319,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     }
     
     
-    fclubLane.payRevenueToFightCLubs(fightClubRewards);
+    fclubAlley.payRevenueToFightClubs(fightClubRewards);
     yakDen.payRevenueToYakuza( _yakRewards);
     //send ref rewards
     uBlood.mint(msg.sender,refRewards * 1 ether);
@@ -712,7 +712,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     address _uBlood,
     address _ugWeapons, 
     address _randomizer,
-    address _fclubLane
+    address _fclubAlley
   ) external onlyOwner {
     ierc1155FY = IERC1155(_ugFYakuza);
     ugNFT = IUGNFT(_ugNFT);
@@ -722,7 +722,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     ugWeapons = iUGWeapons(_ugWeapons);
     randomizer = IRandomizer(_randomizer);
     yakDen = iUGYakDen(_yakDen);
-    fclubLane = iFightClubLane(_fclubLane);
+    fclubAlley = iFightClubAlley(_fclubAlley);
   }
 
   function addAdmin(address addr) external onlyOwner {

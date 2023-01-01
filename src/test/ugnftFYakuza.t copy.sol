@@ -12,7 +12,7 @@ import "../UGWeapons.sol";
 import "../Randomizer.sol";
 import "../UGArena.sol";
 import '../RaidEntry.sol';
-import '../UGFightClubLane.sol';
+import '../UGFightClubAlley.sol';
 // import "../interfaces/IUBlood.sol";
 //import "../interfaces/IUGNFT2.sol";
 import "../interfaces/IUNFT.sol";
@@ -80,7 +80,7 @@ contract UGNFTsTest is DSTest {
     Randomizer public randomizer;
     UGWeapons public ugWeapons;
     RaidEntry public raidEntry;
-    UGFightClubLane public fclubLane;
+    UGFightClubAlley public fclubAlley;
     // IUNFT public uNft;
     // Migrations public ugMigration;
     // IUGame public oldGameTest;
@@ -113,10 +113,10 @@ contract UGNFTsTest is DSTest {
         ugNFT =  new UGNFT(uri, name1, symbol1);
         uBLOOD = IUBlood(bloodContractTestnet);//testnet blood addy
         ugYakDen = new UGYakDen( address(ugFYakuza), bloodContractTestnet, mockOwner);
-        fclubLane = new UGFightClubLane( address(ugNFT), bloodContractTestnet, address(randomizer), mockOwner);
+        fclubAlley = new UGFightClubAlley( address(ugNFT), bloodContractTestnet, address(randomizer), mockOwner);
         ugArena = new UGArena(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(randomizer), address(ugYakDen));
         ugWeapons = new UGWeapons();
-        ugRaid = new UGRaid(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(randomizer), mockOwner, address(ugYakDen), address(fclubLane));
+        ugRaid = new UGRaid(address(ugNFT), address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(randomizer), mockOwner, address(ugYakDen), address(fclubAlley));
         // ugRaid = IUGRaid(ugRaidtestContract);
         // ugMigration = IUGMigration(ugMigrationContractTestnet);//testnet migration contract
         // ugMigration = new Migrations(address(ugNFT),bloodContractTestnet, 0xb19A304598603bf3645fb6b06D27985581D44e5a, 0xe95d607EC03B6fC991FfBe86ad3841A951631c42, unftOldMock_testnet, address(ugArena), 0xE0BDf2e2EF2fda69B20dc54D224A64F99F640336 );//testnet migration contract
@@ -124,19 +124,19 @@ contract UGNFTsTest is DSTest {
         // uNft = IUNFT(unftOldMock_testnet);
         // oldGameTest = IUGame(oldGameTestnet);
 
-        raidEntry = new RaidEntry( address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(ugRaid), address(bloodOwnerTestnet));
+        raidEntry = new RaidEntry( address(ugFYakuza), bloodContractTestnet, address(ugArena), address(ugWeapons), address(ugRaid), address(ugYakDen), address(fclubAlley), address(bloodOwnerTestnet));
 
         //forgesmith
          ugForgeSmith = new UGForgeSmith(address(ugNFT), address(ugFYakuza), address(uBLOOD), address(ugWeapons), address(ugRaid), address(ugArena));
-         ugGame = new UGgame(address(ugNFT),address(ugFYakuza),address(ugArena), address(ugRaid), bloodContractTestnet,  address(ugForgeSmith), mockOwner, address(fclubLane));
+         ugGame = new UGgame(address(ugNFT),address(ugFYakuza),address(ugArena), address(ugRaid), bloodContractTestnet,  address(ugForgeSmith), mockOwner, address(fclubAlley));
         
         
        // ugArena.setPaused(false);
         ugArena.setGameContract(address(ugGame));
         ugYakDen.setGameContract(address(ugGame));
-        fclubLane.setGameContract(address(ugGame));
+        fclubAlley.setGameContract(address(ugGame));
         //set Admins
-        fclubLane.addAdmin(address(ugGame));
+        fclubAlley.addAdmin(address(ugGame));
         ugRaid.addAdmin(address(ugGame));
         ugArena.addAdmin(address(ugGame));
         ugArena.addAdmin(address(ugRaid));
@@ -188,7 +188,7 @@ contract UGNFTsTest is DSTest {
         uBLOOD.mint(user2, 60000000 ether);
         uBLOOD.addAdmin(address(ugArena));
         uBLOOD.addAdmin(address(ugYakDen));        
-        uBLOOD.addAdmin(address(fclubLane));
+        uBLOOD.addAdmin(address(fclubAlley));
         hevm.stopPrank();
         
         ugFYakuza.addAdmin(address(this));
@@ -365,14 +365,15 @@ contract UGNFTsTest is DSTest {
       // ugArena.stakedByOwner(user1); 
       hevm.warp(2 days + 1);
 
-       uint _bal = raidEntry.enterRaid(
+      uint _bal = raidEntry.enterRaid(
         IdsUser, 
         createRaiderEntries(
           createUint8AmountsArray(IdsUser.length, 4, 0, 20), //size);
           createUint8AmountsArray(IdsUser.length, 0, 1, 3), //yakFamily choice
           createUint32AmountsArray(IdsUser.length, 65, 4, 150) //sweat
-        ));
-        console.log(" user1 cost to enter raids", _bal);
+        )
+      );
+      console.log(" user1 cost to enter raids", _bal);
 
       
       // console.log('ring',ugNFT.getNftIDsForUser(user1, 2)[0]);

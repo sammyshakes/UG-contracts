@@ -268,7 +268,7 @@ contract UGFYakuza is UGMintBurnPackedBalance, IUGFYakuza, Ownable {
     _removeFromOwnerTokenList( _from, _ids);
     _updateIDUserTotalBalance(_from, FIGHTER_INDEX, _ids.length, Operations.Sub); // Add amount to recipient
     ttlFYakuzasBurned += _ids.length;
-     _batchBurn( _from,  _ids, amounts );
+    _batchBurn( _from,  _ids, amounts);
   }
 
   function safeTransferFrom(
@@ -325,50 +325,50 @@ contract UGFYakuza is UGMintBurnPackedBalance, IUGFYakuza, Ownable {
     string memory imageId;
     string memory _uri;
     
-      if(tokenId > FIGHTER && tokenId <= FIGHTER + ttlFYakuzas) {
-        FighterYakuza memory traits = unPackFighter(idToFYakuza[tokenId]);
-        if (traits.imageId != 0) {
-          imageId = Strings.toString(traits.imageId);
-          jsonString = string(abi.encodePacked(
-          jsonString,
-          Strings.toString(tokenId),',',
-          Strings.toString((traits.isFighter)? 1 : 0),',',
-          Strings.toString(traits.Gen),',',
-          Strings.toString(traits.cunning),',',
-          Strings.toString(traits.brutality),','
-          ));
+    if(tokenId > FIGHTER && tokenId <= FIGHTER + ttlFYakuzas) {
+      FighterYakuza memory traits = unPackFighter(idToFYakuza[tokenId]);
+      if (traits.imageId != 0) {
+        imageId = Strings.toString(traits.imageId);
+        jsonString = string(abi.encodePacked(
+        jsonString,
+        Strings.toString(tokenId),',',
+        Strings.toString((traits.isFighter)? 1 : 0),',',
+        Strings.toString(traits.Gen),',',
+        Strings.toString(traits.cunning),',',
+        Strings.toString(traits.brutality),','
+        ));
 
-          jsonString = string(abi.encodePacked(
-          jsonString,
-          Strings.toString(traits.courage),',',
-          Strings.toString(traits.level),',',
-          Strings.toString(traits.lastLevelUpgradeTime),',',
-          Strings.toString(traits.rank),',',
-          Strings.toString(traits.lastRaidTime),','
-          ));
+        jsonString = string(abi.encodePacked(
+        jsonString,
+        Strings.toString(traits.courage),',',
+        Strings.toString(traits.level),',',
+        Strings.toString(traits.lastLevelUpgradeTime),',',
+        Strings.toString(traits.rank),',',
+        Strings.toString(traits.lastRaidTime),','
+        ));
 
-          jsonString = string(abi.encodePacked(
-          jsonString,
-          Strings.toString(traits.scars),',',
-          Strings.toString(traits.knuckles),',',
-          Strings.toString(traits.chains),',',
-          Strings.toString(traits.butterfly),',',
-          Strings.toString(traits.machete),',',
-          Strings.toString(traits.katana)
-          ));
-        }
-
-        fyakuza = traits.isFighter ? "fighteryakuza/fighter/" : "fighteryakuza/yakuza/";
-
-        _uri = string(abi.encodePacked(
-          baseURI,
-          fyakuza,
-          imageId,
-          ".png",
-          "?traits=",
-          jsonString
+        jsonString = string(abi.encodePacked(
+        jsonString,
+        Strings.toString(traits.scars),',',
+        Strings.toString(traits.knuckles),',',
+        Strings.toString(traits.chains),',',
+        Strings.toString(traits.butterfly),',',
+        Strings.toString(traits.machete),',',
+        Strings.toString(traits.katana)
         ));
       }
+
+      fyakuza = traits.isFighter ? "fighteryakuza/fighter/" : "fighteryakuza/yakuza/";
+
+      _uri = string(abi.encodePacked(
+        baseURI,
+        fyakuza,
+        imageId,
+        ".png",
+        "?traits=",
+        jsonString
+      ));
+    }
     return _uri;
   }
 

@@ -9,6 +9,8 @@ import "./interfaces/IUGFYakuza.sol";
 import "./interfaces/IUGNFT.sol";
 import "./interfaces/IUBlood.sol";
 import "./interfaces/IUGArena.sol";
+import "./interfaces/IUGYakDen.sol";
+import "./interfaces/IUGFClubAlley.sol";
 import "./interfaces/IRaidEntry.sol";
 
 interface iugWeapons {
@@ -24,9 +26,7 @@ interface iugRaid{
     function getRaidCost(uint256, uint256) external view returns(uint256);
 }
 
-contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
-
-    
+contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {    
 
     constructor(
         address _ugFYakuza, 
@@ -34,6 +34,8 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
         address _ugArena, 
         address _ugWeapons, 
         address _ugRaid, 
+        address _ugYakDen, 
+        address _fclubAlley, 
         address _devWallet
     ) {
         ugFYakuza = IUGFYakuza(_ugFYakuza);
@@ -41,6 +43,8 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
         ugArena = IUGArena(_ugArena);
         ugWeapons = iugWeapons(_ugWeapons);
         ugRaid = iugRaid(_ugRaid); 
+        ugYakDen = IUGYakDen(_ugYakDen);
+        fclubAlley = IUGFClubAlley(_fclubAlley);
         devWallet = _devWallet;  
     }
 
@@ -52,6 +56,8 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
     IUBlood private uBlood;
     iugWeapons private ugWeapons;
     iugRaid private ugRaid;
+    IUGYakDen private ugYakDen;
+    IUGFClubAlley private fclubAlley;
 
     //////////////////////////////////
     //          ERRORS             //
@@ -68,8 +74,10 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
     error AlreadyInQueue(uint256 tokenId);
     
     uint8 constant SWEAT = 56;
-    uint256 private BASE_RAID_FEE = 100;
     uint16 constant MAX_SIZE_TIER = 4;
+    uint8 public FIGHTCLUB_CUT = 10;
+    uint8 public YAKUZA_CUT = 10;
+    uint256 private BASE_RAID_FEE = 100;
 
     //Modifiers//
     modifier onlyAdmin() {
@@ -105,20 +113,20 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
         for(uint i; i<packedFighters.length;i++){
             //make sure its a fighter not yakuza
             if(!unPackFighter(packedFighters[i]).isFighter) continue;
-            //make sure raider not already in queue
-            if(ugRaid.viewIfRaiderIsInQueue(tokenIds[i])) revert AlreadyInQueue(tokenIds[i]);
-
             raidSize = raiderEntries[i].size;
-
-            if(raidSize == 0 || raidSize > MAX_SIZE_TIER) revert InvalidSize();
+            
+            //make sure raider not already in queue
+            if(ugRaid.viewIfRaiderIsInQueue(tokenIds[i])) revert AlreadyInQueue(tokenIds[i]);                
+            if(raidSize == 0 || raidSize > MAX_SIZE_TIER) revert InvalidSize();              
+            if(raidSize == 4) size4Raids++;
+                     
             ttlSweat += raiderEntries[i].sweat;
             (packedTickets[i], bloodEntryFee) = packTicketForEntry(unPackFighter(packedFighters[i]), raidSize, raiderEntries[i].sweat, tokenIds[i], raiderEntries[i].yakFamily);
             
-            ttlBloodEntryFee += bloodEntryFee;              
-            if(raidSize == 4) size4Raids++;
+            ttlBloodEntryFee += bloodEntryFee;
         }
 
-        if(size4Raids == 0){
+        if(size4Raids > 0){
             //update raid timer for size 4 raids
             uint256 count;
             uint256[] memory packedSize4Raiders = new uint256[](size4Raids);
@@ -128,16 +136,51 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
                 }
             }
             ugFYakuza.setRaidTraitsFromPacked(packedSize4Raiders);
-        }
-        
+        } 
 
         //burn sweat (ID = 56)
         if (ugRaid.sweatRoundActive() && ttlSweat > 0) ugWeapons.burn(msg.sender, SWEAT, ttlSweat);
         //burn blood entry fee
         burnBlood(msg.sender, ttlBloodEntryFee);
+        
         //add raid tickets to Raid Queue
         ugRaid.addTicketsToRaiderQueue(packedTickets);  
-        ugRaid.addIfRaidersInQueue(tokenIds); 
+        ugRaid.addIfRaidersInQueue(tokenIds);            
+    }
+
+    function enterTrain(uint256[] calldata tokenIds, RaiderEntry[] calldata raiderEntries) external onlyEOA nonReentrant returns(uint256 ttlBloodEntryFee){
+        uint256 ttlSweat;
+        uint256 bloodEntryFee;
+        
+        //make sure tokens staked in arena by sender by claiming
+        ugArena.claimManyFromArena(tokenIds, false );
+        
+        if(tokenIds.length != raiderEntries.length) revert MismatchArrays();
+    
+        //get fighters
+        uint256[] memory packedFighters = ugFYakuza.getPackedFighters(tokenIds);
+        uint256[] memory packedTickets = new uint256[](packedFighters.length);
+
+        for(uint i; i<packedFighters.length;i++){
+            //make sure its a fighter not yakuza
+            if(!unPackFighter(packedFighters[i]).isFighter) continue;
+            
+            ttlSweat += raiderEntries[i].sweat;
+            (packedTickets[i], bloodEntryFee) = packTicketForEntry(unPackFighter(packedFighters[i]), raiderEntries[i].size, raiderEntries[i].sweat, tokenIds[i], raiderEntries[i].yakFamily);
+            
+            ttlBloodEntryFee += bloodEntryFee;
+        }
+
+        //burn sweat (ID = 56)
+        if (ugRaid.sweatRoundActive() && ttlSweat > 0) ugWeapons.burn(msg.sender, SWEAT, ttlSweat);
+        //burn blood entry fee
+        burnBlood(msg.sender, ttlBloodEntryFee);   
+        //pay fight clubs
+        fclubAlley.payRevenueToFightClubs(ttlBloodEntryFee * FIGHTCLUB_CUT / 100);
+        //pay yakuza
+        ugYakDen.payRevenueToYakuza(ttlBloodEntryFee * YAKUZA_CUT / 100);
+
+        ugFYakuza.setRaidTraitsFromPacked(packedTickets); 
     }
 
     function burnBlood(address account, uint256 amount) private {

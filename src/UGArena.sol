@@ -7,16 +7,12 @@ import "./interfaces/IUGArena.sol";
 import "./interfaces/IUGFYakuza.sol";
 import "./interfaces/IUGNFT.sol";
 import "./interfaces/IUBlood.sol";
+import "./interfaces/IUGYakDen.sol";
 import "./interfaces/IRandomizer.sol";
 import "./interfaces/IUGgame.sol";
 import "./ERC1155/utils/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-
-interface IUGYakDen {
-  function payRevenueToYakuza(uint256 amount) external;
-}
-
 
 contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
 

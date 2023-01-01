@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 
-contract UGFightClubLane is Ownable, Pausable, ReentrancyGuard {
+contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
 
   struct Stake {
     uint64 bloodPerLevel;
@@ -231,7 +231,7 @@ contract UGFightClubLane is Ownable, Pausable, ReentrancyGuard {
     return owed;
   }
 
-  function payRevenueToFightCLubs(uint256 amount) external onlyAdmin {
+  function payRevenueToFightClubs(uint256 amount) external onlyAdmin {
     _payFightClubs(amount);
   }
   

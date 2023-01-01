@@ -13,12 +13,9 @@ import "./interfaces/IUGArena.sol";
 import "./interfaces/IUGRaid.sol";
 import "./interfaces/IUGgame.sol";
 import "./interfaces/IUGForgeSmith.sol";
+import "./interfaces/IUGFClubAlley.sol";
 
 import "./test/console.sol";
-
-interface iUGFightClubLane {
-  function claimFightClubs(uint256[] memory tokenIds, bool unstake) external returns(uint256[] memory) ;  
-}
 
 
 contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
@@ -32,7 +29,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     IUBlood public uBlood;
     IUGArena public ugArena;
     IUGForgeSmith public ugForgeSmith;
-    iUGFightClubLane public fclubLane;
+    IUGFClubAlley public fclubAlley;
 
       /////////////////////////////////
      //          EVENTS             //
@@ -115,7 +112,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         address _blood, 
         address _ugForgeSmith,
         address _devWallet,
-        address _fclubLane
+        address _fclubAlley
     ) {
         ugNFT = IUGNFT(_ugnft);
         ugFYakuza = IUGFYakuza(_ugFYakuza);
@@ -124,7 +121,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         uBlood = IUBlood(_blood);
         ugForgeSmith = IUGForgeSmith(_ugForgeSmith);
         devWallet = _devWallet;
-        fclubLane = iUGFightClubLane(_fclubLane);
+        fclubAlley = IUGFClubAlley(_fclubAlley);
     }
 
     /** MINTING FUNCTIONS */
@@ -267,7 +264,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
                     
         }  
         //only claim if staked
-        if(_isStaked) fclubLane.claimFightClubs(tokenIds, false);
+        if(_isStaked) fclubAlley.claimFightClubs(tokenIds, false);
         console.log('here');
         console.log('totalBloodCost', totalBloodCost);      
         burnBlood(_msgSender(), totalBloodCost);
@@ -536,13 +533,22 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     }
 
     /** OWNER ONLY FUNCTIONS */
-    function setContracts(address _uBlood, address _ugFYakuza, address _ugNFT, address _ugArena, address _ugForgeSmith, address _ugRaid) external onlyOwner {
+    function setContracts(
+        address _uBlood, 
+        address _ugFYakuza, 
+        address _ugNFT, 
+        address _ugArena, 
+        address _ugForgeSmith, 
+        address _ugRaid,
+        address _fclubAlley
+    ) external onlyOwner {
         uBlood = IUBlood(_uBlood);
         ugFYakuza = IUGFYakuza(_ugFYakuza);
         ugNFT = IUGNFT(_ugNFT);
         ugArena = IUGArena(_ugArena);
         ugForgeSmith = IUGForgeSmith(_ugForgeSmith);
         ugRaid = IUGRaid(_ugRaid);
+        fclubAlley = IUGFClubAlley(_fclubAlley);        
     }
     
     function setPaused(bool paused) external onlyOwner {
