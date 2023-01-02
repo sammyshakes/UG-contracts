@@ -12,6 +12,7 @@ import "./interfaces/IRandomizer.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
+import "./test/console.sol";
 
 contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
 
@@ -53,7 +54,7 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
   /////////////////////////////////
   error MismatchArrays();
   //error InvalidTokens(uint256 tokenId);
-  error InvalidOwner();
+  error InvalidOwner(address owner);
   error InvalidAddress();
   error InvalidTokenId();
   error Unauthorized();
@@ -100,8 +101,7 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
     uint256[] memory _tokenIds = new uint256[](numStakedFightClubs);
     //loop through user balances until we find all the fighters
     uint count;
-    uint ttl = ugNFT.ttlFightClubs();
-    for(uint i = 1; count<numStakedFightClubs && i <= FIGHT_CLUB + ttl; i++){
+    for(uint i = 1; count<numStakedFightClubs; i++){
       if(stakedFightclubOwners[FIGHT_CLUB + i] == user){
         _tokenIds[count] = FIGHT_CLUB + i;
         count++;
@@ -144,7 +144,7 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
     ugNFT.safeBatchTransferFrom(account, address(this), tokenIds, amounts, "");
   }
 
-  function claimFightClubs(uint256[] calldata tokenIds, bool unstake) public whenNotPaused nonReentrant {
+  function claimFightClubs(uint256[] calldata tokenIds, bool unstake) public whenNotPaused {
     require(tokenIds.length > 0, "Empty Array");
     IUGNFT.ForgeFightClub[] memory fightclubs = ugNFT.getForgeFightClubs(tokenIds);
     if(tokenIds.length != fightclubs.length) revert MismatchArrays();
@@ -164,7 +164,7 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
       account = stakedFightclubs[tokenIds[i]].owner;
       // The _admins[] check allows the Game contract to claim at level upgrades
       // and raid contract when raiding.
-      if(account != _msgSender() && !_admins[_msgSender()]) revert InvalidOwner();
+      if(account != _msgSender() && !_admins[_msgSender()]) revert InvalidOwner(_msgSender());
 
       owed += _calculateStakingRewards(tokenIds[i]);   
 
@@ -223,7 +223,8 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
     return owed;
   }
 
-  function _calculateStakingRewards(uint256 tokenId) private view returns (uint256 owed) {
+  function _calculateStakingRewards(uint256 tokenId) private view returns (uint256) {
+    uint256 owed;
     IUGNFT.ForgeFightClub memory fightclub = ugNFT.getForgeFightClub(tokenId);
     Stake memory myStake = stakedFightclubs[tokenId];
     // Calculate portion of $BLOOD based on level * size
@@ -233,6 +234,10 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
 
   function payRevenueToFightClubs(uint256 amount) external onlyAdmin {
     _payFightClubs(amount);
+  }
+
+  function incrementLevelsStaked(uint256 amount) external onlyAdmin {
+    totalLevelsStaked += amount;
   }
   
   function _payFightClubs(uint amount) private {

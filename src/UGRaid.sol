@@ -8,20 +8,14 @@ import "./interfaces/IUBlood.sol";
 import "./interfaces/IUGArena.sol";
 import "./interfaces/IUGRaid.sol";
 import "./interfaces/IRandomizer.sol";
+import "./interfaces/IUGYakDen.sol";
+import "./interfaces/IUGFClubAlley.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface iUGWeapons {
   function burn(address _from, uint256 _id, uint256 _amount) external;  
   function mint(address _from, uint256 _id, uint256 _amount, bytes memory _data) external;
   function batchMint(address _to, uint256[] memory _ids, uint256[] memory _amounts, bytes memory _data) external;  
-}
-
-interface iUGYakDen {
-  function payRevenueToYakuza(uint256 amount) external;  
-}
-
-interface iFightClubAlley {
-  function payRevenueToFightClubs(uint256 amount) external;  
 }
 
 contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
@@ -51,8 +45,8 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     ugWeapons = iUGWeapons(_ugWeapons);
     randomizer = IRandomizer(_randomizer);    
     devWallet = _devWallet;
-    yakDen = iUGYakDen(_yakDen);
-    fclubAlley = iFightClubAlley(_fclubAlley);
+    yakDen = IUGYakDen(_yakDen);
+    fclubAlley = IUGFClubAlley(_fclubAlley);
 
     attackScoreToWeaponIndex[BRONZE_ATTACK_SCORE] = BRONZE;
     attackScoreToWeaponIndex[GOLD_ATTACK_SCORE] = GOLD_WEAPON;
@@ -71,8 +65,8 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   IUBlood private uBlood;
   iUGWeapons private ugWeapons;
   IRandomizer private randomizer; 
-  iUGYakDen public yakDen;
-  iFightClubAlley public fclubAlley;
+  IUGYakDen public yakDen;
+  IUGFClubAlley public fclubAlley;
 
   //////////////////////////////////
   //          EVENTS             //
@@ -721,8 +715,8 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     ugArena = IUGArena(_ugArena);
     ugWeapons = iUGWeapons(_ugWeapons);
     randomizer = IRandomizer(_randomizer);
-    yakDen = iUGYakDen(_yakDen);
-    fclubAlley = iFightClubAlley(_fclubAlley);
+    yakDen = IUGYakDen(_yakDen);
+    fclubAlley = IUGFClubAlley(_fclubAlley);
   }
 
   function addAdmin(address addr) external onlyOwner {

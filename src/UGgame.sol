@@ -15,9 +15,6 @@ import "./interfaces/IUGgame.sol";
 import "./interfaces/IUGForgeSmith.sol";
 import "./interfaces/IUGFClubAlley.sol";
 
-import "./test/console.sol";
-
-
 contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
 
       //////////////////////////////////
@@ -247,7 +244,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     }
 
     function levelUpFightClubs(
-        uint256[] memory tokenIds, 
+        uint256[] calldata tokenIds, 
         uint256[] memory _upgradeLevels, 
         uint256[] memory _upgradeSizes,
         bool _isStaked
@@ -255,21 +252,34 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         if(tokenIds.length != _upgradeLevels.length) revert MismatchArrays(); 
         if(tokenIds.length != _upgradeSizes.length) revert MismatchArrays(); 
         IUGNFT.ForgeFightClub memory fclub;
+        uint256 ttlLevels;
         for(uint i; i< tokenIds.length; i++){
             fclub  = ugNFT.getForgeFightClub(tokenIds[i]);
             totalBloodCost += getFightClubLevelUpBloodCost(fclub.level, fclub.size,  _upgradeLevels[i] == 1 ? 1 : 0, _upgradeSizes[i] == 1 ? 1 : 0);
             
-            if(_upgradeLevels[i] == 1) _upgradeLevels[i] += 1;
-            if(_upgradeSizes[i] == 1) _upgradeSizes[i] += 1;           
+            if(_upgradeLevels[i] == 1) {
+                _upgradeLevels[i] += 1;
+                ttlLevels++;
+            }
+            if(_upgradeSizes[i] == 1 && _upgradeLevels[i] == 0) {
+                _upgradeSizes[i] += 1;  
+                ttlLevels += (fclub.level);
+            }      
+            if(_upgradeSizes[i] == 1 && _upgradeLevels[i] == 1) {
+                _upgradeSizes[i] += 1;  
+                ttlLevels += (fclub.level + 1);
+            }     
                     
         }  
         //only claim if staked
-        if(_isStaked) fclubAlley.claimFightClubs(tokenIds, false);
-        console.log('here');
-        console.log('totalBloodCost', totalBloodCost);      
+        if(_isStaked) {
+            fclubAlley.claimFightClubs(tokenIds, false);
+            fclubAlley.incrementLevelsStaked(ttlLevels);
+        }
+           
         burnBlood(_msgSender(), totalBloodCost);
         //level up fight clubs
-        ugNFT.levelUpFightClubsForges(tokenIds,  _upgradeSizes, _upgradeLevels)[0];
+        ugNFT.levelUpFightClubsForges(tokenIds,  _upgradeSizes, _upgradeLevels);
          
     }
 

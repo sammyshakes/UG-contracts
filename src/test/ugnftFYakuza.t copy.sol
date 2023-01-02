@@ -137,11 +137,14 @@ contract UGNFTsTest is DSTest {
         fclubAlley.setGameContract(address(ugGame));
         //set Admins
         fclubAlley.addAdmin(address(ugGame));
+        fclubAlley.addAdmin(address(ugRaid));
+        fclubAlley.addAdmin(address(raidEntry));
         ugRaid.addAdmin(address(ugGame));
         ugArena.addAdmin(address(ugGame));
         ugArena.addAdmin(address(ugRaid));
         ugArena.addAdmin(address(raidEntry));
         ugYakDen.addAdmin(address(ugArena));
+        ugYakDen.addAdmin(address(ugRaid));
 
         ugNFT.addAdmin(address(ugGame));
         ugNFT.addAdmin(address(ugRaid));
@@ -205,6 +208,7 @@ contract UGNFTsTest is DSTest {
         ugNFT.setApprovalForAll(address(ugForgeSmith), true);
         ugFYakuza.setApprovalForAll(address(ugRaid), true);
         ugNFT.setApprovalForAll(address(ugRaid), true);
+        ugNFT.setApprovalForAll(address(fclubAlley), true);
       //  ugNFT.setApprovalForAll(address(ugRaid), true);
         
         hevm.stopPrank();
@@ -217,6 +221,7 @@ contract UGNFTsTest is DSTest {
         ugFYakuza.setApprovalForAll(address(ugRaid), true);
         ugFYakuza.setApprovalForAll(address(ugYakDen), true);
         ugNFT.setApprovalForAll(address(ugRaid), true);
+        ugNFT.setApprovalForAll(address(fclubAlley), true);
        
         hevm.stopPrank();      
 
@@ -319,23 +324,20 @@ contract UGNFTsTest is DSTest {
       hevm.prank(user1, user1);
       ugYakDen.claimManyFromArena(ids, true);
       ugYakDen.getBloodPerRank();
-       ugYakDen.totalRankStaked();      
+      ugYakDen.totalRankStaked();      
     }
 
     function testMintBatchFighters() public {
       
-     // uint256[] memory ids = createAmountsArray(50, 5000, 1, 1);
-        // uint256[] memory retrievedIds = ugNFT2.getNftIDsForUser(user1, FIGHTER_INDEX);   
-        // console.log("balance of Fighters user1", retrievedIds.length);
-     uint256[] memory IdsUser = ugFYakuza.walletOfOwner(user1);
+      uint256[] memory IdsUser = ugFYakuza.walletOfOwner(user1);
 
       // uint256 numfighters = ugFYakuza.getNumFightersForUser(user1);
       // console.log(numfighters);
 
      
-    //   ugFYakuza.burn(user1, 16);
-    //   IdsUser = ugFYakuza.walletOfOwner(user1);
-    //   ugFYakuza.batchBurn(user1, createAmountsArray(10, 1, 1, 100),createAmountsArray(10, 1, 0, 1));
+      // ugFYakuza.burn(user1, 16);
+      // IdsUser = ugFYakuza.walletOfOwner(user1);
+      // ugFYakuza.batchBurn(user1, createAmountsArray(10, 1, 1, 100),createAmountsArray(10, 1, 0, 1));
       
       // IdsUser = ugFYakuza.walletOfOwner(user1);
       // numfighters = ugFYakuza.balanceOf(user1);
@@ -426,36 +428,23 @@ contract UGNFTsTest is DSTest {
 
     //     hevm.warp(9 days);   
       
-    //     ugArena.claimManyFromArena(ugArena.getStakedFighterIDsForUser(user1), false);
-    //     ugArena.claimManyFromArena(ugArena.getStakedYakuzaIDsForUser(user1), false);
    
-    // //    IdsUser = ugArena.getStakedFighterIDsForUser(user1);
     // //    IdsUser = ugFYakuza.walletOfOwner(user1);
     // hevm.stopPrank();
 
-    //  hevm.startPrank(user2, user2);
-
-    //   console.log('user2 blood bal before claim fighters',uBLOOD.balanceOf(user2));
-    //     ugArena.claimManyFromArena(ugArena.getStakedFighterIDsForUser(user2), false);
-    //     console.log('user2 blood bal after claim fighters',uBLOOD.balanceOf(user2));
-    //     ugArena.claimManyFromArena(ugArena.getStakedYakuzaIDsForUser(user2), false);
-    //     console.log('user2 blood bal after claim yakuza',uBLOOD.balanceOf(user2));
-    // //    IdsUser = ugArena.getStakedFighterIDsForUser(user2);
-    // //    IdsUser = ugFYakuza.walletOfOwner(user2);
-    // hevm.stopPrank();
+    
 
     // console.log('bpR',ugArena.getBloodPerRank());
-    // ugArena.totalRankStaked();
 
 
     //      hevm.startPrank(user2, user2);
    
     //     IdsUser = ugNFT.getNftIDsForUser(user2, 3);
     // hevm.stopPrank();
+    hevm.warp(6 days + 2);
 
-     hevm.startPrank(user1, user1);
-        ugGame.mintFightClubs(2);
-        
+    hevm.startPrank(user1, user1);
+    ugGame.mintFightClubs(4);
         
     //     ugGame.mintForges(1);
     //     IdsUser = ugNFT.getNftIDsForUser(user1, 4);
@@ -463,41 +452,55 @@ contract UGNFTsTest is DSTest {
     //     ugForgeSmith.stakeForges(IdsUser);
 
         IdsUser = ugNFT.getNftIDsForUser(user1, FIGHT_CLUB_INDEX);
-
+      fclubAlley.stakeFightclubs(IdsUser);
+      
         for(uint i; i <2;i++){
-            bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 2), createAmountsArray(IdsUser.length, 1,0,2), false);
+            bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 2), createAmountsArray(IdsUser.length, 1,0,2), true);
            console.log("blood cost to level up fight clubs user 1 ", bal);
         }
-    //     for(uint i; i <2;i++){
-    //         bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 1), createAmountsArray(IdsUser.length, 0,0,1));
-    //       //  console.log("blood cost to level up fight clubs user 1 ", bal);
-    //     }
-    //     ugRaid.stakeFightclubs(IdsUser);
-    //     // stakedIdsUser = ugArena.getStakedFighterIDsForUser(user1);
-    //     //   ugGame.levelUpFighters(stakedIdsUser, createAmountsArray(stakedIdsUser.length, 1, 0, 1), true);
+        for(uint i; i <2;i++){
+          bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 1), createAmountsArray(IdsUser.length, 0,0,1), true);
+          console.log("blood cost to level up fight clubs user 1 ", bal);
+        }        
         
+    //     //   ugGame.levelUpFighters(stakedIdsUser, createAmountsArray(stakedIdsUser.length, 1, 0, 1), true);
+      ugRaid.referee(100);
 
         hevm.stopPrank();
 
-    //     //  hevm.startPrank(user2, user2);
-    //     // ugGame.mintFightClubs(1);
+        fclubAlley.getStakedFightClubIDsForUser(user1);
+
+         hevm.startPrank(user2, user2);
+        ugGame.mintFightClubs(4);
         
-    //     // IdsUser = ugNFT.getNftIDsForUser(user2, FIGHT_CLUB_INDEX);
-    //     // ugGame.mintForges(1);
-    //     // for(uint i; i <2;i++){
-    //     //     bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 1), createAmountsArray(IdsUser.length, 1,0,1));
-    //     //   //  console.log("blood cost to level up fight clubs user 1 ", bal);
-    //     // }
+        IdsUser = ugNFT.getNftIDsForUser(user2, FIGHT_CLUB_INDEX);
+        fclubAlley.stakeFightclubs(IdsUser);
+        hevm.warp(9 days);
+        for(uint i; i <2;i++){
+          bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 1), createAmountsArray(IdsUser.length, 1,0,1), true);
+          console.log("blood cost to level up fight clubs user 2 ", bal);
+        }
     //     // for(uint i; i <2;i++){
     //     //     bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 1), createAmountsArray(IdsUser.length, 0,0,1));
     //     //   //  console.log("blood cost to level up fight clubs user 1 ", bal);
     //     // }
-    //     // ugRaid.stakeFightclubs(IdsUser);
-    //     // // stakedIdsUser = ugArena.getStakedFighterIDsForUser(user2);
-    //     // //   ugGame.levelUpFighters(stakedIdsUser, createAmountsArray(stakedIdsUser.length, 1, 0, 1), true);
         
+        hevm.stopPrank();
 
-    //     // hevm.stopPrank();
+        fclubAlley.getStakedFightClubIDsForUser(user2);
+
+        uint val = fclubAlley.totalFightClubsStaked();
+        console.log("total fight clubs staked",val);
+        val = fclubAlley.totalLevelsStaked();
+        console.log("totalLevelsStaked",val);
+        val = fclubAlley.bloodPerLevel();
+        console.log("bloodPerLevel",val);
+
+        hevm.prank(address(ugGame));
+        fclubAlley.payRevenueToFightClubs(100000);
+
+        val = fclubAlley.bloodPerLevel();
+        console.log("bloodPerLevel",val);
 
     //       uint ttlBloodCost;
     //    // uint ttlBloodCostRingsAmulets;
