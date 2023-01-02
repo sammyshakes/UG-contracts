@@ -12,7 +12,6 @@ import "./interfaces/IRandomizer.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-import "./test/console.sol";
 
 contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
 

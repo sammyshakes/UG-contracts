@@ -154,9 +154,9 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   uint256 private REFEREE_BASE_CUT_PCT = 10;
   uint256 public BASE_RAID_FEE = 100;
 
-  bool public yakuzaRoundActive;
-  bool public weaponsRoundActive;
-  bool public sweatRoundActive;
+  bool public yakuzaRoundActive = true;
+  bool public weaponsRoundActive = true;
+  bool public sweatRoundActive = true;
 
   uint256 private MAX_RAIDERS_PER_REF = 100;
   uint256 private maxRaiderQueueLevelTier;
