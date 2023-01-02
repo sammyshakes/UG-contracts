@@ -75,6 +75,7 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
     
     uint8 constant SWEAT = 56;
     uint16 constant MAX_SIZE_TIER = 4;
+    uint8 public TRAIN_MULTIPLIER = 2;
     uint8 public FIGHTCLUB_CUT = 10;
     uint8 public YAKUZA_CUT = 10;
     uint256 private BASE_RAID_FEE = 100;
@@ -170,6 +171,8 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
             
             ttlBloodEntryFee += bloodEntryFee;
         }
+
+        ttlBloodEntryFee *= TRAIN_MULTIPLIER;
 
         //burn sweat (ID = 56)
         if (ugRaid.sweatRoundActive() && ttlSweat > 0) ugWeapons.burn(msg.sender, SWEAT, ttlSweat);

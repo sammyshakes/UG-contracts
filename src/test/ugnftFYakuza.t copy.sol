@@ -145,6 +145,7 @@ contract UGNFTsTest is DSTest {
         ugArena.addAdmin(address(raidEntry));
         ugYakDen.addAdmin(address(ugArena));
         ugYakDen.addAdmin(address(ugRaid));
+        ugYakDen.addAdmin(address(raidEntry));
 
         ugNFT.addAdmin(address(ugGame));
         ugNFT.addAdmin(address(ugRaid));
@@ -245,7 +246,7 @@ contract UGNFTsTest is DSTest {
           batchMintFighters(user1, lvl,amt, true,1);
           // batchMintFighters(user1, lvl,amt, false,61);
           batchMintFighters(user2, lvl,amt, false,121);
-        //  batchMintFighters(user2, lvl,amt, false,181);
+         //batchMintFighters(user2, lvl,amt, true,181);
      
     }
 
@@ -396,6 +397,15 @@ contract UGNFTsTest is DSTest {
     //test stake    
         ugYakDen.stakeManyToArena( IdsUser);
 
+      hevm.stopPrank();
+        //mint fighters
+
+        batchMintFighters(user2, lvl,amt, true,181);
+        IdsUser = ugFYakuza.walletOfOwner(user2);
+
+        hevm.prank(user2);
+        ugArena.stakeManyToArena( IdsUser);
+
      
 
     // console.log('ring',ugNFT.getNftIDsForUser(user2, 2)[0]);
@@ -405,7 +415,7 @@ contract UGNFTsTest is DSTest {
     //   ugArena.stakeAmulet(ugNFT.getNftIDsForUser(user2, 3)[0]);
     // //   IdsUser = ugFYakuza.walletOfOwner(user2);
     // //   numfighters = ugFYakuza.balanceOf(user2);
-      hevm.stopPrank();
+      
 
       hevm.prank(address(ugArena));
       ugYakDen.payRevenueToYakuza(100000);
@@ -464,7 +474,7 @@ contract UGNFTsTest is DSTest {
         }        
         
     //     //   ugGame.levelUpFighters(stakedIdsUser, createAmountsArray(stakedIdsUser.length, 1, 0, 1), true);
-      ugRaid.referee(100);
+      // ugRaid.referee(100);
 
         hevm.stopPrank();
 
@@ -484,7 +494,17 @@ contract UGNFTsTest is DSTest {
     //     //     bal = ugGame.levelUpFightClubs(IdsUser, createAmountsArray(IdsUser.length, 1, 0 , 1), createAmountsArray(IdsUser.length, 0,0,1));
     //     //   //  console.log("blood cost to level up fight clubs user 1 ", bal);
     //     // }
-        
+        IdsUser = ugArena.stakedByOwner(user2);
+        _bal = raidEntry.enterTrain(
+        IdsUser, 
+        createRaiderEntries(
+          createUint8AmountsArray(IdsUser.length, 4, 0, 20), //size);
+          createUint8AmountsArray(IdsUser.length, 0, 1, 3), //yakFamily choice
+          createUint32AmountsArray(IdsUser.length, 65, 4, 150) //sweat
+        )
+      );
+      console.log(" user1 cost to train", _bal);
+
         hevm.stopPrank();
 
         fclubAlley.getStakedFightClubIDsForUser(user2);

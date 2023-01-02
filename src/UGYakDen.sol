@@ -98,7 +98,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
 
   //MODIFIERS
   modifier onlyAdmin() {
-    require(_admins[_msgSender()], "Arena: Only admins can call this");
+    require(_admins[_msgSender()], "YakDen: Only admins can call this");
     _;
   }
 
