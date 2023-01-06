@@ -72,8 +72,6 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
   mapping(address => bool) private _admins;
   //maps fightclub id => Stake
   mapping(uint256 => Stake) public stakedFightclubs;
-  //maps fightclub id => owner address
-  mapping(uint256 => address) public stakedFightclubOwners;
   //maps owner => number of staked fightclubs
   mapping(address => uint256) public ownerTotalStakedFightClubs;
   // any rewards distributed when no Yakuza are staked
@@ -101,7 +99,7 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
     //loop through user balances until we find all the fighters
     uint count;
     for(uint i = 1; count<numStakedFightClubs; i++){
-      if(stakedFightclubOwners[FIGHT_CLUB + i] == user){
+      if(stakedFightclubs[FIGHT_CLUB + i].owner == user){
         _tokenIds[count] = FIGHT_CLUB + i;
         count++;
       }
@@ -126,7 +124,6 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
     for(uint i; i < tokenIds.length; i++){
       currLevel = fightclubs[i].level;
       levelCount += (currLevel * fightclubs[i].size);
-      stakedFightclubOwners[tokenIds[i]] = account;
       amounts[i] = 1;
 
       myStake.bloodPerLevel = uint64(bloodPerLevel);
@@ -174,7 +171,6 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
 
         // Delete old mapping
         delete stakedFightclubs[tokenIds[i]]; 
-
         //set amounts array for batch transfer
         _amounts[i] = 1;
 

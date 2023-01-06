@@ -92,7 +92,6 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
   mapping(address => uint256) private _ownersOfStakedRings;
   mapping(address => uint256) private _ownersOfStakedAmulets;
   mapping(uint256 => uint256) private _ringAmuletUnstakeTimes;  
-  mapping(address => uint256) private _ownerLastClaimAllTime;
   
   // admins
   mapping(address => bool) private _admins;
@@ -138,14 +137,6 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
 
   function getRingAmuletUnstakeTime(uint256 tokenId) external view returns (uint256) {
     return _ringAmuletUnstakeTimes[tokenId];
-  }
-
-  function getOwnerLastClaimAllTime(address user) external view returns (uint256){
-    return _ownerLastClaimAllTime[user];
-  } 
-
-  function setOwnerLastClaimAllTime(address user) external onlyAdmin {
-    _ownerLastClaimAllTime[user] = block.timestamp;
   }
 
   function stakedByOwner(address owner) external view returns (uint256[] memory) {
@@ -377,7 +368,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
 
   function stakeRing(uint256 tokenId) external nonReentrant whenNotPaused {
     address account = _msgSender();
-    if(_ringAmuletUnstakeTimes[tokenId] + UNSTAKE_COOLDOWN > block.timestamp) revert InvalidToken();
+    if(_ringAmuletUnstakeTimes[tokenId] + UNSTAKE_COOLDOWN > block.timestamp ) revert InvalidToken();
     if(ierc1155.balanceOf(account, tokenId) == 0) revert InvalidTokens({tokenId: tokenId});
     //check if user has a staked ring already
     if(_ownersOfStakedRings[account] != 0) revert MaximumAllowedActiveRings({tokenId: tokenId});
@@ -687,6 +678,10 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
 
   function setGameContract(address _ugGame) external onlyOwner {
     ugGame = IUGgame(_ugGame);
+  }
+
+  function setFighterCoolDown(uint256 timeInSec) external onlyOwner {
+    MINIMUM_DAYS_TO_EXIT = timeInSec;
   }
 
   function setPaused(bool paused) external onlyOwner {

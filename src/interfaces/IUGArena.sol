@@ -33,7 +33,5 @@ interface IUGArena {
     function addAdmin(address) external; // onlyOwner 
     function removeAdmin(address) external; // onlyOwner
     function payRaidRevenueToYakuza(uint256 amount) external; //onlyAdmin
-    function getOwnerLastClaimAllTime(address user) external view returns (uint256);
-    function setOwnerLastClaimAllTime(address user) external;
     function setPaused(bool) external;
 }

@@ -331,12 +331,14 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     return _getQueueLength(RaiderQueue[level][sizeTier]);
   }
 
-  function getRaiderQueueLengths(uint256 sizeTier) external view returns (uint256[] memory){
+  function getRaiderQueueLengths(uint256 sizeTier) external view returns (uint256[] memory, uint256){
     uint256[] memory _queues = new uint256[](maxRaiderQueueLevelTier);
+    uint filledRaids;
     for(uint i=1; i<= _queues.length; i++){
-      _getQueueLength(RaiderQueue[i][sizeTier]);
+      _queues[i] = _getQueueLength(RaiderQueue[i][sizeTier]);
+      filledRaids += _queues[i] / (sizeTier * 5);
     }     
-    return _queues;
+    return (_queues, filledRaids);
   }
 
   function claimRaiderBloodRewards() external nonReentrant {
