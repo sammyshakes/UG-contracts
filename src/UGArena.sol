@@ -244,34 +244,32 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
   //////////////////////////////////////////////////////////////*/
 
   function stakeManyToArena(uint256[] calldata tokenIds) external whenNotPaused nonReentrant {
-    //get batch balances to ensure rightful owner
+    //get batch balances to ensure rightful owner and are not already staked
     if(!ugFYakuza.checkUserBatchBalance(_msgSender(), tokenIds)) revert InvalidToken();//InvalidTokens({tokenId: tokenId});
     uint256[] memory _amounts = new uint256[](tokenIds.length);
     uint256[] memory FY = ugFYakuza.getPackedFighters(tokenIds);
     IUGFYakuza.FighterYakuza memory fighter;
     Stake memory myStake;
-    uint256 numFighters;
 
     _addToOwnerStakedTokenList(_msgSender(), tokenIds);
     
     for (uint i = 0; i < tokenIds.length; i++) {   
-      fighter = unPackFighter(FY[i]);
-      myStake.stakeTimestamp = uint32(block.timestamp);
-      myStake.owner = _msgSender();
-      _amounts[i] = 1; //set amounts array for batch transfer
+      fighter = unPackFighter(FY[i]);      
+      require(fighter.isFighter, "only stake Fighters");
 
-      if(fighter.isFighter){        
-        myStake.bloodPerRank = 0;
-        _fighterArena[tokenIds[i]] = myStake;
-        numFighters++;
-      }  else revert InvalidToken();
+      myStake.stakeTimestamp = uint32(block.timestamp);
+      myStake.owner = _msgSender();              
+      myStake.bloodPerRank = 0;
+      _fighterArena[tokenIds[i]] = myStake;    
+      
+      _amounts[i] = 1; //set amounts array for batch transfer  
 
       _updateIDStakedBalance(_msgSender(),tokenIds[i], _amounts[i], Operations.Add);
     }
 
-    totalFightersStaked += numFighters;   
+    totalFightersStaked += tokenIds.length;
 
-    _updateIDUserTotalBalance(_msgSender(),FIGHTER_INDEX, numFighters, Operations.Add); 
+    _updateIDUserTotalBalance(_msgSender(),FIGHTER_INDEX, tokenIds.length, Operations.Add); 
   
     ugFYakuza.safeBatchTransferFrom(_msgSender(), address(this), tokenIds, _amounts, "");
     emit TokensStaked(_msgSender(), tokenIds, block.timestamp);
