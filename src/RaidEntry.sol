@@ -258,6 +258,24 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
         delete _admins[addr];
     }
 
+    function setContracts(
+        address _ugFYakuza,
+        address _blood,
+        address _ugArena,
+        address _ugWeapons,
+        address _ugRaid,
+        address _ugYakDen,
+        address _fclubAlley
+    ) external onlyOwner {
+        ugFYakuza = IUGFYakuza(_ugFYakuza);
+        uBlood = IUBlood(_blood);
+        ugArena = IUGArena(_ugArena);
+        ugWeapons = iugWeapons(_ugWeapons);
+        ugRaid = iugRaid(_ugRaid);
+        ugYakDen = IUGYakDen(_ugYakDen);
+        fclubAlley = IUGFClubAlley(_fclubAlley);
+    }
+
     function packTicketForEntry(
         IUGFYakuza.FighterYakuza memory fighter,
         uint256 sizeTier,

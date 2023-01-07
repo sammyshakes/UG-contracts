@@ -355,7 +355,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     IUGFYakuza.FighterYakuza memory fighter
   ) private returns (uint256 owed ) {
     Stake memory stake = _fighterArena[tokenId];
-    if(stake.owner != _msgSender() && !_admins[_msgSender()]) revert InvalidOwner();
+    if(stake.owner != account && !_admins[_msgSender()]) revert InvalidOwner();
     if(unstake && block.timestamp - stake.stakeTimestamp < MINIMUM_DAYS_TO_EXIT) revert StakingCoolDown();
 
     owed = _calculateStakingRewards(tokenId, ringLevel, ringExpireTime, extraAmuletDays, amuletExpireTime, fighter);

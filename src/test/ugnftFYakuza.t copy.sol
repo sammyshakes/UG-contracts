@@ -166,8 +166,8 @@ contract UGNFTsTest is DSTest {
             address(ugFYakuza),
             address(uBLOOD),
             address(ugWeapons),
-            address(ugRaid),
-            address(ugArena)
+            address(ugArena),
+            address(bloodOwnerTestnet)
         );
         ugGame = new UGgame(
             address(ugNFT),
@@ -558,6 +558,7 @@ contract UGNFTsTest is DSTest {
             )
         );
         console.log(" user1 cost to train", _bal);
+       
 
         hevm.stopPrank();
 
@@ -575,6 +576,10 @@ contract UGNFTsTest is DSTest {
 
         val = fclubAlley.bloodPerLevel();
         console.log("bloodPerLevel", val);
+
+        hevm.warp(100 days);
+        hevm.prank(user2);
+        ugArena.claimManyFromArena(IdsUser, true);
 
         //       uint ttlBloodCost;
         //    // uint ttlBloodCostRingsAmulets;

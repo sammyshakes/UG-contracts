@@ -79,6 +79,28 @@ contract Deploy is Script {
         //set dev wallet
         ugRaid.setDevWallet(bloodOwnerTestnet);
 
+        //set Raid to all other contracts (raidEntry and Game)
+        
+        raidEntry.setContracts(
+            address(ugFYakuza),
+            address(uBLOOD),
+            address(ugArena),
+            address(ugWeapons),
+            address(ugRaid),
+            address(ugYakDen),
+            address(fclubAlley)
+        );
+
+        ugGame.setContracts(
+            address(uBLOOD),
+            address(ugFYakuza),
+            address(ugNFT),
+            address(ugArena),
+            address(ugForgeSmith),
+            address(ugRaid),
+            address(fclubAlley)
+        );        
+
         vm.stopBroadcast();
     }
 }
