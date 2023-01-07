@@ -142,16 +142,16 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   uint16 constant MACHETE_TIER = 14;//levels 40 and up
   uint16 constant KATANA_TIER = 18;//levels 52 and up
 
-  uint256 constant BRUTALITY_WEIGHT = 45;
-  uint256 constant YAKUZA_INTIMIDATION_WEIGHT = 5;
+  uint32 private BRUTALITY_WEIGHT = 45;
+  uint32 private YAKUZA_INTIMIDATION_WEIGHT = 5;
   
-  uint256 constant WEAPONS_WEIGHT = 25;
+  uint32 private WEAPONS_WEIGHT = 25;
   
-  uint256 constant SWEAT_WEIGHT = 15;
-  uint256 constant SCARS_WEIGHT = 10;
-  uint256 private FIGHT_CLUB_BASE_CUT_PCT = 10;
-  uint256 private YAKUZA_BASE_CUT_PCT = 10;
-  uint256 private REFEREE_BASE_CUT_PCT = 10;
+  uint32 private SWEAT_WEIGHT = 15;
+  uint32 private SCARS_WEIGHT = 10;
+  uint32 private FIGHT_CLUB_BASE_CUT_PCT = 10;
+  uint32 private YAKUZA_BASE_CUT_PCT = 10;
+  uint32 private REFEREE_BASE_CUT_PCT = 10;
   uint256 public BASE_RAID_FEE = 100;
 
   bool public yakuzaRoundActive = true;
@@ -751,7 +751,36 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     MAX_RAIDERS_PER_REF = numRaiders;
   }
 
-  function setRefereeBasePct(uint256 pct) external onlyOwner {
+  function setYakIntimidationWeight(uint32 pct) external onlyOwner {
+    YAKUZA_INTIMIDATION_WEIGHT = pct;
+  } 
+
+  function setBrutalityWeight(uint32 pct) external onlyOwner {
+    BRUTALITY_WEIGHT = pct;
+  } 
+
+  function setScarsWeight(uint32 pct) external onlyOwner {
+    SCARS_WEIGHT = pct;
+  }  
+  
+
+  function setSweatWeight(uint32 pct) external onlyOwner {
+    SWEAT_WEIGHT = pct;
+  } 
+
+  function setWeaponsWeight(uint32 pct) external onlyOwner {
+    WEAPONS_WEIGHT = pct;
+  } 
+
+  function setFightClubCut(uint32 pct) external onlyOwner {
+    FIGHT_CLUB_BASE_CUT_PCT = pct;
+  }
+
+  function setYakuzaCut(uint32 pct) external onlyOwner {
+    YAKUZA_BASE_CUT_PCT = pct;
+  }
+
+  function setRefereeBasePct(uint32 pct) external onlyOwner {
     REFEREE_BASE_CUT_PCT = pct;
   }
   

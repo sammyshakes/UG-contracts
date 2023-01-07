@@ -59,7 +59,7 @@ interface IUGRaid {
   function setYakuzaRound(bool) external;//onlyOwner
   function setSweatRound(bool) external;//onlyOwner
   function setBaseRaidFee(uint256 newBaseFee) external; //onlyOwner
-  function setRefereeBasePct(uint256 pct) external; //onlyOwner
+  function setRefereeBasePct(uint32 pct) external; //onlyOwner
   function setDevWallet(address) external;//onlyOwner
   function addAdmin(address) external;//onlyOwner
   function removeAdmin(address) external;//onlyOwner
