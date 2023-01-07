@@ -153,17 +153,17 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     _ids[0] = tokenId;
     Stake memory myStake = _fighterArena[tokenId];
     uint256[] memory fighters = ugFYakuza.getPackedFighters(_ids);
-    (uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays) = getAmuletRingInfo(myStake.owner);
-    return _calculateStakingRewards(tokenId, ringLevel, ringExpireTime, extraAmuletDays, unPackFighter(fighters[0]));
+    (uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays, uint256 amuletExpireTime) = getAmuletRingInfo(myStake.owner);
+    return _calculateStakingRewards(tokenId, ringLevel, ringExpireTime, extraAmuletDays, amuletExpireTime, unPackFighter(fighters[0]));
   }
 
  function calculateAllStakingRewards(uint256[] memory tokenIds) external view returns (uint256 owed) {
     Stake memory myStake = _fighterArena[tokenIds[0]];
-    (uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays) = getAmuletRingInfo(myStake.owner);
+    (uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays, uint256 amuletExpireTime) = getAmuletRingInfo(myStake.owner);
 
     uint256[] memory fighters = ugFYakuza.getPackedFighters(tokenIds);
     for (uint256 i; i < tokenIds.length; i++) {
-      owed += _calculateStakingRewards(tokenIds[i], ringLevel, ringExpireTime, extraAmuletDays, unPackFighter(fighters[i]));
+      owed += _calculateStakingRewards(tokenIds[i], ringLevel, ringExpireTime, extraAmuletDays, amuletExpireTime, unPackFighter(fighters[i]));
     }
     return owed;
   }
@@ -173,37 +173,34 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     uint256 ringLevel, 
     uint256 ringExpireTime, 
     uint256 extraAmuletDays, 
+    uint256 amuletExpireTime,
     IUGFYakuza.FighterYakuza memory fighter
   ) private view returns (uint256 owed) {
     Stake memory myStake = _fighterArena[tokenId];
+    // check to make sure id is staked or return 0
+    if (myStake.owner == address(0x00)) return 0;
 
     uint256 fighterExpireTime;
     if (fighter.isFighter) { // Fighter
       //calculate fighter expire time
       fighterExpireTime = fighter.lastLevelUpgradeTime + 7 days + extraAmuletDays;
-
-      if(fighter.lastRaidTime + 7 days  < fighterExpireTime) fighterExpireTime = fighter.lastRaidTime + 7 days;
-
-      if(fighterExpireTime >= block.timestamp ){//not expired
-        //without rings
-        if(block.timestamp >= myStake.stakeTimestamp) owed += (block.timestamp - myStake.stakeTimestamp) *fighter.level* DAILY_BLOOD_RATE_PER_LEVEL / 1 days;
-        //calculate owed from Ring income
-        if(ringExpireTime >= fighterExpireTime) ringExpireTime = fighterExpireTime;
-        if(ringExpireTime >= myStake.stakeTimestamp) owed += (ringExpireTime - myStake.stakeTimestamp) * (fighter.level * (ringLevel * RING_DAILY_BLOOD_PER_LEVEL)) / 1 days;
-      
-      } else {//expired Fighter
-        //without rings calc up to fighter expire time
-        if(fighterExpireTime >= myStake.stakeTimestamp) owed += (fighterExpireTime - myStake.stakeTimestamp) *fighter.level* DAILY_BLOOD_RATE_PER_LEVEL / 1 days;
-        //calculate owed from Ring income up to fighter expire time
-        if(ringExpireTime >= fighterExpireTime) ringExpireTime = fighterExpireTime;
-        if(ringExpireTime >= myStake.stakeTimestamp) owed += (ringExpireTime - myStake.stakeTimestamp) * (fighter.level * (ringLevel * RING_DAILY_BLOOD_PER_LEVEL)) / 1 days;
-      }
-        
+      //calculate Amulet expire time
+      if(fighterExpireTime > amuletExpireTime) fighterExpireTime = amuletExpireTime;
+      //check if raid timer expired
+      if(fighterExpireTime > fighter.lastRaidTime + 7 days) fighterExpireTime = fighter.lastRaidTime + 7 days;
+      //compare to current timestamp
+      if(fighterExpireTime > block.timestamp ) fighterExpireTime = block.timestamp;
+      //calculate owed base earnings
+      if(fighterExpireTime > myStake.stakeTimestamp) owed += (fighterExpireTime - myStake.stakeTimestamp) *fighter.level* DAILY_BLOOD_RATE_PER_LEVEL / 1 days;
+      //calculate Ring expire time
+      if(ringExpireTime >= fighterExpireTime) ringExpireTime = fighterExpireTime;
+      //calculate owed from Ring earnings
+      if(ringExpireTime >= myStake.stakeTimestamp) owed += (ringExpireTime - myStake.stakeTimestamp) * (fighter.level * (ringLevel * RING_DAILY_BLOOD_PER_LEVEL)) / 1 days;        
     }
     return (owed);
   }
 
-  function getAmuletRingInfo(address user) public view returns(uint256 ringLevel, uint256 ringExpireTime, uint256 extrAmuletDays){
+  function getAmuletRingInfo(address user) public view returns(uint256 ringLevel, uint256 ringExpireTime, uint256 extrAmuletDays, uint256 amuletExpireTime){
     IUGNFT.RingAmulet memory stakedRing;
     IUGNFT.RingAmulet memory stakedAmulet;
     uint256 ring = _ownersOfStakedRings[user];
@@ -222,11 +219,17 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
       ringExpireTime = 0;
     }
       
-    if(amulet > 0) stakedAmulet = ugNFT.getRingAmulet( amulet);
-    //calculate extra amulet days
-    if(amulet == 0 || stakedAmulet.lastLevelUpgradeTime + 7 days < block.timestamp){
+    if(amulet > 0) {
+      stakedAmulet = ugNFT.getRingAmulet( amulet);
+      extrAmuletDays = stakedAmulet.level * 1 days;
+      //calculate extra amulet days
+      if(block.timestamp > stakedAmulet.lastLevelUpgradeTime + 7 days){
+        amuletExpireTime = stakedAmulet.lastLevelUpgradeTime + 7 days;
+      } else amuletExpireTime = block.timestamp;
+    } else {
       extrAmuletDays = 0;
-    } else extrAmuletDays = stakedAmulet.level * 1 days;
+      amuletExpireTime = 0;
+    }
   }
   
   function verifyAllStakedByUser(address user, uint256[] calldata _tokenIds) external view returns (bool) {
@@ -286,10 +289,6 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
 
   function claimManyFromArena(uint256[] calldata tokenIds, bool unstake) external whenNotPaused nonReentrant {
     require(tokenIds.length > 0, "Empty Array");
-    uint256[] memory packedFighters = ugFYakuza.getPackedFighters(tokenIds);
-    if(tokenIds.length != packedFighters.length) revert MismatchArrays();
-    uint256[] memory _amounts = new uint256[](tokenIds.length);
-    uint256 owed = 0;
     // Fetch the owner so we can give that address the $BLOOD.
     // If the same address does not own all tokenIds this transaction will fail.
     // This is especially relevant when the Game contract calls this function as the _msgSender() - it should NOT get the $BLOOD ofc.
@@ -297,22 +296,36 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     // The _admins[] check allows the Game contract to claim at level upgrades
     // and raid contract when raiding.
     if(account != _msgSender() && !_admins[_msgSender()]) revert InvalidToken();
-    
     //get ring amulet info
-    (uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays) = getAmuletRingInfo(account);    
+    (uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays, uint256 amuletExpireTime) = getAmuletRingInfo(account);   
+    _claimManyFromArena(tokenIds, unstake, account, ringLevel, ringExpireTime, extraAmuletDays, amuletExpireTime);
+  }
+
+  function _claimManyFromArena(
+    uint256[] calldata tokenIds, 
+    bool unstake, 
+    address account, 
+    uint256 ringLevel, 
+    uint256 ringExpireTime, 
+    uint256 extraAmuletDays, 
+    uint256 amuletExpireTime
+  ) private {
+    uint256[] memory packedFighters = ugFYakuza.getPackedFighters(tokenIds);
+    if(tokenIds.length != packedFighters.length) revert MismatchArrays();
+    uint256[] memory _amounts = new uint256[](tokenIds.length);
+    uint256 owed = 0;
     
     if(unstake) _removeFromOwnerStakedTokenList(_msgSender(), tokenIds);
 
     for (uint256 i; i < packedFighters.length; i++) {   
-      owed += _claimFighter(tokenIds[i], unstake, ringLevel, ringExpireTime, extraAmuletDays, unPackFighter(packedFighters[i]));     
+      owed += _claimFighter(tokenIds[i], unstake, account, ringLevel, ringExpireTime, extraAmuletDays, amuletExpireTime, unPackFighter(packedFighters[i]));     
       //set amounts array for batch transfer
       _amounts[i] = 1;
     }
     // Pay out earned $BLOOD
      if (owed > 0) {      
-      uint256 MAXIMUM_BLOOD_SUPPLY = ugGame.MAXIMUM_BLOOD_SUPPLY();      
-      uint256 bloodTotalSupply = uBlood.totalSupply();
-      uint256 normalizedSupply = bloodTotalSupply/1e18;
+      uint256 MAXIMUM_BLOOD_SUPPLY = ugGame.MAXIMUM_BLOOD_SUPPLY();     
+      uint256 normalizedSupply = uBlood.totalSupply()/1e18;
       // Pay out rewards as long as we did not reach max $BLOOD supply
       if (normalizedSupply < MAXIMUM_BLOOD_SUPPLY ) {
         if (normalizedSupply + owed > MAXIMUM_BLOOD_SUPPLY) { // If totalSupply + owed exceeds the maximum supply then pay out only the remainder
@@ -331,12 +344,21 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     emit TokensClaimed(account, tokenIds, unstake, owed, block.timestamp);
   }
 
-  function _claimFighter(uint256 tokenId, bool unstake, uint256 ringLevel, uint256 ringExpireTime, uint256 extraAmuletDays, IUGFYakuza.FighterYakuza memory fighter) private returns (uint256 owed ) {
+  function _claimFighter(
+    uint256 tokenId, 
+    bool unstake, 
+    address account, 
+    uint256 ringLevel, 
+    uint256 ringExpireTime, 
+    uint256 extraAmuletDays, 
+    uint256 amuletExpireTime, 
+    IUGFYakuza.FighterYakuza memory fighter
+  ) private returns (uint256 owed ) {
     Stake memory stake = _fighterArena[tokenId];
     if(stake.owner != _msgSender() && !_admins[_msgSender()]) revert InvalidOwner();
     if(unstake && block.timestamp - stake.stakeTimestamp < MINIMUM_DAYS_TO_EXIT) revert StakingCoolDown();
 
-    owed = _calculateStakingRewards(tokenId, ringLevel, ringExpireTime, extraAmuletDays, fighter);
+    owed = _calculateStakingRewards(tokenId, ringLevel, ringExpireTime, extraAmuletDays, amuletExpireTime, fighter);
     
     // steal and pay tax logic
     if (unstake) {

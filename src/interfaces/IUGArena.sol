@@ -16,7 +16,6 @@ interface IUGArena {
     function getStake(uint256 tokenId) external view returns (Stake memory);
     function getStakeOwner(uint256 tokenId) external view returns (address);
     function verifyAllStakedByUser(address, uint256[] calldata) external view returns (bool);
-    function getAmuletRingInfo(address user) external view returns(uint256, uint256, uint256);
 
     function stakeRing(uint256 tokenId) external;
     function stakeAmulet(uint256 tokenId) external;

@@ -226,10 +226,10 @@ contract UGNFTsTest is DSTest {
 
         ugGame.setDevWallet(mockOwner);
 
-        //phase switches
-        ugRaid.setWeaponsRound(true);
-        ugRaid.setYakuzaRound(true);
-        // ugRaid.setSweatRound(true);
+        //phase switches -- these are now set to true by default at deployment
+        // ugRaid.setWeaponsRound(true);
+        // ugRaid.setYakuzaRound(true);
+        ugRaid.setSweatRound(false);
 
         //blood auth
         hevm.startPrank(bloodOwnerTestnet);
