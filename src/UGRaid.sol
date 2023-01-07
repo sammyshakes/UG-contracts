@@ -333,7 +333,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
 
   function getRaiderQueueLengths(uint256 sizeTier) external view returns (uint256[] memory, uint256){
     uint256[] memory _queues = new uint256[](maxRaiderQueueLevelTier);
-    uint filledRaids;
+    uint256 filledRaids;
     for(uint i=1; i<= _queues.length; i++){
       _queues[i] = _getQueueLength(RaiderQueue[i][sizeTier]);
       filledRaids += _queues[i] / (sizeTier * 5);
