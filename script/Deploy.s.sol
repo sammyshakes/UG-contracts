@@ -105,7 +105,8 @@ contract Deploy is Script {
         fclubAlley.addAdmin(address(ugRaid));
         fclubAlley.addAdmin(address(raidEntry));
         ugRaid.addAdmin(address(ugGame));
-        ugArena.addAdmin(address(ugGame));
+        ugArena.addAdmin(address(ugGame));        
+        ugArena.addAdmin(address(ugForgeSmith));
         ugArena.addAdmin(address(ugRaid));
         ugArena.addAdmin(address(raidEntry));
         ugYakDen.addAdmin(address(ugArena));
@@ -147,6 +148,14 @@ contract Deploy is Script {
         // ugRaid.setWeaponsRound(true);
         // ugRaid.setYakuzaRound(true);
         // ugRaid.setSweatRound(true);
+
+        ugForgeSmith.setContracts(
+            address(ugNFT), 
+            address(ugFYakuza), 
+            address(uBLOOD), 
+            address(ugWeapons), 
+            address(ugArena)
+        );
 
         vm.stopBroadcast();
     }

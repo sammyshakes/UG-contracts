@@ -5,6 +5,8 @@ libs = ['lib']
 
 [rpc_endpoints]
 fuji = "${FUJI_RPC_URL}"
+avax-mainnet = "${AVAX_MAINNET_RPC_URL}"
+
 
 [etherscan]
 fuji = { key = "${ETHERSCAN_API_KEY}" }

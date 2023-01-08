@@ -40,11 +40,11 @@ contract Deploy is Script {
         ugFYakuza = IUGFYakuza(vm.envAddress("UGFYAKUZA_TESTNET_ADDRESS"));
         ugNFT = IUGNFT(vm.envAddress("UGNFT2_TESTNET_ADDRESS"));
         ugWeapons = UGWeapons(vm.envAddress("UGWEAPONS2_TESTNET_ADDRESS"));
-        ugYakDen = UGYakDen(vm.envAddress("UGFYAKUZA_TESTNET_ADDRESS"));
-        fclubAlley = UGFightClubAlley(vm.envAddress("UGFYAKUZA_TESTNET_ADDRESS"));
-        ugArena = UGArena(vm.envAddress("UGFYAKUZA_TESTNET_ADDRESS"));
-        raidEntry = RaidEntry(vm.envAddress("UGFYAKUZA_TESTNET_ADDRESS"));
-        ugGame = UGgame(vm.envAddress("UGFYAKUZA_TESTNET_ADDRESS"));
+        ugYakDen = UGYakDen(vm.envAddress("UGFYAKDEN_TESTNET_ADDRESS"));
+        fclubAlley = UGFightClubAlley(vm.envAddress("FIGHTCLUBALLEY_TESTNET_ADDRESS"));
+        ugArena = UGArena(vm.envAddress("UGARENA3_TESTNET_ADDRESS"));
+        raidEntry = RaidEntry(vm.envAddress("RAIDENTRY4_TESTNET_ADDRESS"));
+        ugGame = UGgame(vm.envAddress("UGGAME5_TESTNET_ADDRESS"));
         ugForgeSmith = UGForgeSmith(
             vm.envAddress("UGFORGESMITH2_TESTNET_ADDRESS")
         );

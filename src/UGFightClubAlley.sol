@@ -241,11 +241,14 @@ contract UGFightClubAlley is Ownable, Pausable, ReentrancyGuard {
       return;
     }
     // makes sure to include any unaccounted $BLOOD 
-    //need to * 100000 to prevent claim amount being lower than level staked causing a 0 result
-    uint256 bpr = bloodPerLevel;
-    bpr += 100000 * (amount + _unaccountedRewards) / totalLevelsStaked / 1000000;
-    bloodPerLevel = bpr;
-    _unaccountedRewards = 0;
+    uint256 bpr = (amount + _unaccountedRewards) / totalLevelsStaked;
+    if(bpr > 1){
+      bloodPerLevel += bpr;
+      _unaccountedRewards = 0;      
+    } else {
+      //keep track till bpr gets large enough to distribute
+      _unaccountedRewards += amount;
+    }
     emit FightClubsPaid(amount);
   }
 
