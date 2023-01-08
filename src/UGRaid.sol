@@ -158,7 +158,6 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   bool public weaponsRoundActive = true;
   bool public sweatRoundActive = true;
 
-  uint256 private MAX_RAIDERS_PER_REF = 100;
   uint256 private maxRaiderQueueLevelTier;
   
   uint256 public ttlRaids;
@@ -747,10 +746,6 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
     devWallet = newWallet;
   }
 
-  function setMaxRaidersPerRef(uint256 numRaiders) external onlyOwner {
-    MAX_RAIDERS_PER_REF = numRaiders;
-  }
-
   function setYakIntimidationWeight(uint32 pct) external onlyOwner {
     YAKUZA_INTIMIDATION_WEIGHT = pct;
   } 
@@ -761,8 +756,7 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
 
   function setScarsWeight(uint32 pct) external onlyOwner {
     SCARS_WEIGHT = pct;
-  }  
-  
+  }    
 
   function setSweatWeight(uint32 pct) external onlyOwner {
     SWEAT_WEIGHT = pct;
@@ -875,36 +869,36 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   function packTicket(RaidEntryTicket memory _ticket) 
     private pure returns (uint256)
   {
-      uint256 ticket = uint256(_ticket.sizeTier);
-      uint256 nextVal = _ticket.fighterLevel;
-      ticket |= nextVal<<8;
-      nextVal = _ticket.yakuzaFamily;
-      ticket |= nextVal<<16;
-      nextVal = _ticket.courage;
-      ticket |= nextVal<<24;
-      nextVal = _ticket.brutality;
-      ticket |= nextVal<<32;
-      nextVal = _ticket.cunning;
-      ticket |= nextVal<<40;
-      nextVal = _ticket.knuckles;
-      ticket |= nextVal<<48;
-      nextVal = _ticket.chains;
-      ticket |= nextVal<<56;
-      nextVal = _ticket.butterfly;
-      ticket |= nextVal<<64;
-      nextVal = _ticket.machete;
-      ticket |= nextVal<<72;
-      nextVal = _ticket.katana;
-      ticket |= nextVal<<80;
-      nextVal = _ticket.scars;
-      ticket |= nextVal<<96;
-      nextVal = _ticket.sweat;
-      ticket |= nextVal<<128;
-      nextVal = _ticket.fighterId;
-      ticket |= nextVal<<160;
-      nextVal = _ticket.entryFee;
-      ticket |= nextVal<<192;
-      return ticket;
+    uint256 ticket = uint256(_ticket.sizeTier);
+    uint256 nextVal = _ticket.fighterLevel;
+    ticket |= nextVal<<8;
+    nextVal = _ticket.yakuzaFamily;
+    ticket |= nextVal<<16;
+    nextVal = _ticket.courage;
+    ticket |= nextVal<<24;
+    nextVal = _ticket.brutality;
+    ticket |= nextVal<<32;
+    nextVal = _ticket.cunning;
+    ticket |= nextVal<<40;
+    nextVal = _ticket.knuckles;
+    ticket |= nextVal<<48;
+    nextVal = _ticket.chains;
+    ticket |= nextVal<<56;
+    nextVal = _ticket.butterfly;
+    ticket |= nextVal<<64;
+    nextVal = _ticket.machete;
+    ticket |= nextVal<<72;
+    nextVal = _ticket.katana;
+    ticket |= nextVal<<80;
+    nextVal = _ticket.scars;
+    ticket |= nextVal<<96;
+    nextVal = _ticket.sweat;
+    ticket |= nextVal<<128;
+    nextVal = _ticket.fighterId;
+    ticket |= nextVal<<160;
+    nextVal = _ticket.entryFee;
+    ticket |= nextVal<<192;
+    return ticket;
   }
 
   function unpackTicket(uint256 packedTicket) 
@@ -976,27 +970,27 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
       require(ugArena.getStakeOwner(tokenIds[i]) == msg.sender, "InvalidOwner");
       if(viewIfRaiderIsInQueue(tokenIds[i])) _updateIfRaiderIsInQueue(tokenIds[i], Operations.Sub);
     }    
-  }
+  }  
   ////////////////////////////////////////////////
 
   /** ONLY ADMIN FUNCTIONS */
   function onERC1155Received(
-        address,
-        address,
-        uint256,
-        uint256,
-        bytes memory
-    ) public virtual returns (bytes4) {
-        return this.onERC1155Received.selector;
-    }
+    address,
+    address,
+    uint256,
+    uint256,
+    bytes memory
+  ) public virtual returns (bytes4) {
+    return this.onERC1155Received.selector;
+  }
 
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] memory,
-        uint256[] memory,
-        bytes memory
-    ) public virtual returns (bytes4) {
-        return this.onERC1155BatchReceived.selector;
-    }
+  function onERC1155BatchReceived(
+    address,
+    address,
+    uint256[] memory,
+    uint256[] memory,
+    bytes memory
+  ) public virtual returns (bytes4) {
+    return this.onERC1155BatchReceived.selector;
+  }
 }
