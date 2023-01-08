@@ -62,6 +62,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     uint32 constant FIGHTER = 100000;
     uint32 constant FORGE_MAX_SIZE = 5;
     uint32 constant FORGE_MAX_LEVEL = 35;
+    uint32 constant FIGHTCLUB_BASE_MULTIPLIER = 5;
 
     uint16 private FIGHTER_LEVEL_COST_ADJUSTMENT_PCT = 100;
     uint16 private RING_LEVEL_COST_ADJUSTMENT_PCT = 100;
@@ -78,12 +79,12 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     uint256 public MIN_FIGHTERS_PER_RING = 3;
     uint256 public MIN_FIGHTERS_PER_AMULET = 4;
 
-    uint256 private FIGHTER_BASE_LEVEL_COST = 50;
-    uint256 private RING_BASE_LEVEL_COST = 1000;
-    uint256 private AMULET_BASE_LEVEL_COST = 2000;
+    uint256 private FIGHTER_BASE_LEVEL_COST = 60;
+    uint256 private RING_BASE_LEVEL_COST = 1100;
+    uint256 private AMULET_BASE_LEVEL_COST = 2200;
     uint256 private FORGE_BASE_LEVEL_COST = 25000;
     uint256 private FORGE_BASE_SIZE_COST = 125000;
-    uint256 private FIGHT_CLUB_BASE_LEVEL_COST = 1000;
+    uint256 private FIGHT_CLUB_BASE_LEVEL_COST = 2000;
 
     uint256 public RING_BLOOD_MINT_COST = 2_000_000;
     uint256 public AMULET_BLOOD_MINT_COST = 2_000_000;
@@ -542,9 +543,8 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         if (level == 0 || size == 0) return 0;
         return ((FIGHT_CLUB_BASE_LEVEL_COST +
             FIGHT_CLUB_BASE_LEVEL_COST *
-            level) *
-            5 *
-            (2**(size - 1)));
+            level) * size * FIGHTCLUB_BASE_MULTIPLIER);
+            
     }
 
     function _getFighterBloodCostPerLevel(uint16 level)

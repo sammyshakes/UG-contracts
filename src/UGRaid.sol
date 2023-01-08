@@ -142,16 +142,16 @@ contract UGRaid is IUGRaid, Ownable, ReentrancyGuard {
   uint16 constant MACHETE_TIER = 14;//levels 40 and up
   uint16 constant KATANA_TIER = 18;//levels 52 and up
 
-  uint32 private BRUTALITY_WEIGHT = 45;
-  uint32 private YAKUZA_INTIMIDATION_WEIGHT = 5;
+  uint32 public BRUTALITY_WEIGHT = 45;
+  uint32 public YAKUZA_INTIMIDATION_WEIGHT = 5;
   
-  uint32 private WEAPONS_WEIGHT = 25;
+  uint32 public WEAPONS_WEIGHT = 25;
   
-  uint32 private SWEAT_WEIGHT = 15;
-  uint32 private SCARS_WEIGHT = 10;
-  uint32 private FIGHT_CLUB_BASE_CUT_PCT = 10;
-  uint32 private YAKUZA_BASE_CUT_PCT = 10;
-  uint32 private REFEREE_BASE_CUT_PCT = 10;
+  uint32 public SWEAT_WEIGHT = 15;
+  uint32 public SCARS_WEIGHT = 10;
+  uint32 public FIGHT_CLUB_BASE_CUT_PCT = 10;
+  uint32 public YAKUZA_BASE_CUT_PCT = 10;
+  uint32 public REFEREE_BASE_CUT_PCT = 10;
   uint256 public BASE_RAID_FEE = 100;
 
   bool public yakuzaRoundActive = true;

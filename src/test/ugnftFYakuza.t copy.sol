@@ -237,8 +237,8 @@ contract UGNFTsTest is DSTest {
         uBLOOD.addAdmin(address(ugRaid));
         uBLOOD.addAdmin(address(raidEntry));
         uBLOOD.addAdmin(address(ugForgeSmith));
-        uBLOOD.mint(user1, 60000000 ether);
-        uBLOOD.mint(user2, 60000000 ether);
+        uBLOOD.mint(user1, 600000000 ether);
+        uBLOOD.mint(user2, 600000000 ether);
         uBLOOD.addAdmin(address(ugArena));
         uBLOOD.addAdmin(address(ugYakDen));
         uBLOOD.addAdmin(address(fclubAlley));
