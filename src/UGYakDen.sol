@@ -217,16 +217,20 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
   }
   
   function _payYakuzaTax(uint amount) private {
-    if (totalRankStaked == 0) { // if there's no staked Yakuza
+    // if there's no staked Yakuza
+    if (totalRankStaked == 0) { 
       _unaccountedRewards += amount; // keep track of $BLOOD that's due to all Yakuza      
       return;
     }
     // makes sure to include any unaccounted $BLOOD 
-    //need to * 1000 to prevent claim amount being lower than rank staked causing a 0 result
-    uint256 bpr = _bloodPerRank;
-    bpr += 100000 * (amount + _unaccountedRewards) / totalRankStaked / 1000000;
-    _bloodPerRank = bpr;
-    _unaccountedRewards = 0;
+    uint256 bpr = (amount + _unaccountedRewards) / totalRankStaked;
+    if(bpr > 1){
+      _bloodPerRank += bpr;
+      _unaccountedRewards = 0;      
+    } else {
+      //keep track till bpr gets large enough to distribute
+      _unaccountedRewards += amount;
+    }
     emit YakuzaTaxPaid(amount);
   }
 
