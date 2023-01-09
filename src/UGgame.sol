@@ -309,13 +309,18 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
                 _upgradeSizes[i] == 1 ? 1 : 0
             );
 
-            if (_upgradeLevels[i] == 1) {
+            if (_upgradeLevels[i] == 1 && _upgradeSizes[i] == 0) {
                 _upgradeLevels[i] += fclub.level;
-                ttlLevels++;
+                ttlLevels += fclub.size;
             }
-            if (_upgradeSizes[i] == 1) {
+            if (_upgradeSizes[i] == 1 && _upgradeLevels[i] == 0) {
                 _upgradeSizes[i] += fclub.size;
-                ttlLevels += (fclub.level);
+                ttlLevels += fclub.level;
+            }
+            if (_upgradeSizes[i] == 1 && _upgradeLevels[i] == 1) {
+                _upgradeSizes[i] += fclub.size;
+                _upgradeLevels[i] += fclub.level;
+                ttlLevels += (fclub.level + fclub.size + 1);
             }
         }
         //only claim if staked
