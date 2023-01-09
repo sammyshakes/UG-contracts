@@ -185,7 +185,7 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
       //calculate fighter expire time
       fighterExpireTime = fighter.lastLevelUpgradeTime + 7 days + extraAmuletDays;
       //calculate Amulet expire time
-      if(fighterExpireTime > amuletExpireTime) fighterExpireTime = amuletExpireTime;
+      if(amuletExpireTime > 0 && fighterExpireTime > amuletExpireTime) fighterExpireTime = amuletExpireTime;
       //check if raid timer expired
       if(fighterExpireTime > fighter.lastRaidTime + 7 days) fighterExpireTime = fighter.lastRaidTime + 7 days;
       //compare to current timestamp
