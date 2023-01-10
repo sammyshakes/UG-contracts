@@ -89,7 +89,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     uint256 public RING_BLOOD_MINT_COST = 2_000_000;
     uint256 public AMULET_BLOOD_MINT_COST = 2_000_000;
     uint256 public FORGE_BLOOD_MINT_COST = 2_000_000;
-    uint256 public FIGHTCLUB_BLOOD_MINT_COST = 5_000_000;
+    uint256 public FIGHTCLUB_BLOOD_MINT_COST = 6_000_000;
     uint256 public MAXIMUM_BLOOD_SUPPLY = 2_500_000_000;
 
     address private WITHDRAW_ADDRESS;
