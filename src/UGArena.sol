@@ -704,6 +704,14 @@ contract UGArena is IUGArena, Ownable, ReentrancyGuard, Pausable {
     MINIMUM_DAYS_TO_EXIT = timeInSec;
   }
 
+  function setDailyBloodRatePerLevel(uint256 amount) external onlyOwner {
+    DAILY_BLOOD_RATE_PER_LEVEL = amount;
+  }
+
+  function setRingBloodPerLevel(uint256 amount) external onlyOwner {
+    RING_DAILY_BLOOD_PER_LEVEL = amount;
+  }  
+
   function setPaused(bool paused) external onlyOwner {
     if (paused) _pause();
     else _unpause();
