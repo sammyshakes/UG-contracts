@@ -67,13 +67,13 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
     //////////////////////////////////
     //          CONTRACTS          //
     /////////////////////////////////
-    IUGFYakuza private ugFYakuza;
-    IUGArena private ugArena;
-    IUBlood private uBlood;
-    iugWeapons private ugWeapons;
-    iugRaid private ugRaid;
-    IUGYakDen private ugYakDen;
-    IUGFClubAlley private fclubAlley;
+    IUGFYakuza public ugFYakuza;
+    IUGArena public ugArena;
+    IUBlood public uBlood;
+    iugWeapons public ugWeapons;
+    iugRaid public ugRaid;
+    IUGYakDen public ugYakDen;
+    IUGFClubAlley public fclubAlley;
 
     //////////////////////////////////
     //          ERRORS             //
@@ -94,6 +94,7 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
     uint8 public TRAIN_MULTIPLIER = 2;
     uint8 public FIGHTCLUB_CUT = 10;
     uint8 public YAKUZA_CUT = 10;
+    uint32 public MIN_SWEAT_TRAIN = 1000;
 
     //Modifiers//
     modifier onlyAdmin() {
@@ -196,7 +197,8 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
 
         for (uint256 i; i < packedFighters.length; i++) {
             //make sure its a fighter not yakuza
-            if (!unPackFighter(packedFighters[i]).isFighter) continue;
+            if(!unPackFighter(packedFighters[i]).isFighter) continue;
+            require(raiderEntries[i].sweat >= MIN_SWEAT_TRAIN, "NOT ENOUGH SWEAT");
 
             ttlSweat += raiderEntries[i].sweat;
             (packedTickets[i], bloodEntryFee) = packTicketForEntry(
@@ -240,6 +242,10 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
 
     function setTrainMultilpier(uint8 multiplier) external onlyOwner {
         TRAIN_MULTIPLIER = multiplier;
+    }
+
+    function setTrainMinSweat(uint32 amount) external onlyOwner {
+        MIN_SWEAT_TRAIN = amount;
     }
 
     function setFightClubCut(uint8 cut) external onlyOwner {
