@@ -224,7 +224,7 @@ contract UGYakDen is Ownable, ReentrancyGuard, Pausable {
     }
     // makes sure to include any unaccounted $BLOOD 
     uint256 bpr = (amount + _unaccountedRewards) / totalRankStaked;
-    if(bpr > 1){
+    if(bpr > 2){
       _bloodPerRank += bpr;
       _unaccountedRewards = 0;      
     } else {

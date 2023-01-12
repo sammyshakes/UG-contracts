@@ -84,7 +84,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     uint256 private AMULET_BASE_LEVEL_COST = 2200;
     uint256 private FORGE_BASE_LEVEL_COST = 25000;
     uint256 private FORGE_BASE_SIZE_COST = 125000;
-    uint256 private FIGHT_CLUB_BASE_LEVEL_COST = 2000;
+    uint256 private FIGHT_CLUB_BASE_LEVEL_COST = 1000;
 
     uint256 public RING_BLOOD_MINT_COST = 2_000_000;
     uint256 public AMULET_BLOOD_MINT_COST = 2_000_000;

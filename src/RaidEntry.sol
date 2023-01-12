@@ -91,7 +91,7 @@ contract RaidEntry is IRaidEntry, ReentrancyGuard, Ownable {
 
     uint8 constant SWEAT = 56;
     uint16 constant MAX_SIZE_TIER = 4;
-    uint8 public TRAIN_MULTIPLIER = 2;
+    uint8 public TRAIN_MULTIPLIER = 1;
     uint8 public FIGHTCLUB_CUT = 10;
     uint8 public YAKUZA_CUT = 10;
     uint32 public MIN_SWEAT_TRAIN = 1000;

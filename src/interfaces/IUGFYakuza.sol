@@ -52,4 +52,5 @@ interface IUGFYakuza{
     function symbol() external view returns (string memory);
     function setFighter( uint256 tokenId, FighterYakuza memory FY) external;
     function burn(address, uint256) external;
+    function batchBurn(address _from, uint256[] memory _ids, uint256[] memory amounts) external;
 }

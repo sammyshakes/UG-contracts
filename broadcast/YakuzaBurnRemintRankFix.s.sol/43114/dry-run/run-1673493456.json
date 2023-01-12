@@ -1,0 +1,53 @@
+{
+  "transactions": [
+    {
+      "hash": null,
+      "transactionType": "CALL",
+      "contractName": null,
+      "contractAddress": "0x4eAa30791B2E54418D0331b614a926eD9D032bAC",
+      "function": null,
+      "arguments": null,
+      "rpc": "https://api.avax.network/ext/bc/C/rpc",
+      "transaction": {
+        "type": "0x02",
+        "from": "0x715ac5fc4c4587fa8e425afc1d1207cffb7b66d5",
+        "to": "0x4eaa30791b2e54418d0331b614a926ed9d032bac",
+        "gas": "0xf900",
+        "value": "0x0",
+        "data": "0x704802750000000000000000000000005b73c5498c1e3b4dba84de0f1833c4a029d90519",
+        "nonce": "0x447",
+        "accessList": []
+      },
+      "additionalContracts": []
+    },
+    {
+      "hash": null,
+      "transactionType": "CALL",
+      "contractName": null,
+      "contractAddress": "0xB1d066a7CeAF92ff15B39668a44dEf03C17fAc9e",
+      "function": null,
+      "arguments": null,
+      "rpc": "https://api.avax.network/ext/bc/C/rpc",
+      "transaction": {
+        "type": "0x02",
+        "from": "0x715ac5fc4c4587fa8e425afc1d1207cffb7b66d5",
+        "to": "0xb1d066a7ceaf92ff15b39668a44def03c17fac9e",
+        "gas": "0xf959",
+        "value": "0x0",
+        "data": "0x704802750000000000000000000000005b73c5498c1e3b4dba84de0f1833c4a029d90519",
+        "nonce": "0x448",
+        "accessList": []
+      },
+      "additionalContracts": []
+    }
+  ],
+  "receipts": [],
+  "libraries": [],
+  "pending": [],
+  "path": "C:/Users/Sam/Blockchain-Projects/UG-Project/contracts-v2-PackedBalance-version/broadcast\\YakuzaBurnRemintRankFix.s.sol\\43114\\dry-run\\run-latest.json",
+  "returns": {},
+  "timestamp": 1673493456,
+  "chain": 43114,
+  "multi": false,
+  "commit": "efc1caf"
+}
