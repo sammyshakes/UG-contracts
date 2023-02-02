@@ -9,17 +9,14 @@ import "./interfaces/IUGArena.sol";
 import "./interfaces/IUBlood.sol";
 
 contract Merge is ReentrancyGuard, Ownable, Pausable {
-
-    /** CONTRACTS */
+    /**
+     * CONTRACTS
+     */
     IUGFYakuza private ugFYakuza;
     IUGArena private ugArena;
     IUBlood private uBlood;
 
-    constructor(
-        address _ugFYakuza,
-        address _ugArena,
-        address _ublood
-    ){
+    constructor(address _ugFYakuza, address _ugArena, address _ublood) {
         ugFYakuza = IUGFYakuza(_ugFYakuza);
         ugArena = IUGArena(_ugArena);
         uBlood = IUBlood(_ublood);
@@ -44,10 +41,10 @@ contract Merge is ReentrancyGuard, Ownable, Pausable {
 
     BurnedFighter[] public graveyard;
     uint256 public mergePrice = 250000;
-    mapping(address => bool) private _admins; 
+    mapping(address => bool) private _admins;
 
     modifier onlyAdmin() {
-        if(!_admins[_msgSender()]) revert Unauthorized();
+        if (!_admins[_msgSender()]) revert Unauthorized();
         _;
     }
 
@@ -55,9 +52,9 @@ contract Merge is ReentrancyGuard, Ownable, Pausable {
         IUGFYakuza.FighterYakuza memory _fighter1;
         IUGFYakuza.FighterYakuza memory _fighter2;
         IUGFYakuza.FighterYakuza memory fighter;
-        
+
         //verify ownership of oldfighter to msgSender
-        if(!ugFYakuza.checkUserBatchBalance(_msgSender(), tokenIds)) revert InvalidOwner();
+        if (!ugFYakuza.checkUserBatchBalance(_msgSender(), tokenIds)) revert InvalidOwner();
 
         _fighter1 = ugFYakuza.getFighter(tokenIds[0]);
         _fighter2 = ugFYakuza.getFighter(tokenIds[1]);
@@ -83,25 +80,22 @@ contract Merge is ReentrancyGuard, Ownable, Pausable {
         burnBlood(_msgSender(), mergePrice);
         //add burned fighters id and image id to graveyard mapping
         BurnedFighter memory burnedFighter;
-        burnedFighter = BurnedFighter({
-            tokenId: uint128(tokenIds[1]),
-            imageId: uint128(_fighter2.imageId)
-        });
+        burnedFighter = BurnedFighter({tokenId: uint128(tokenIds[1]), imageId: uint128(_fighter2.imageId)});
         graveyard.push(burnedFighter);
-        ugFYakuza.burn(_msgSender(), tokenIds[1]);    
-        
-        ugFYakuza.setFighter(tokenIds[0], fighter);   
+        ugFYakuza.burn(_msgSender(), tokenIds[1]);
 
-        emit FighterMerged(fighter, burnedFighter) ;
+        ugFYakuza.setFighter(tokenIds[0], fighter);
+
+        emit FighterMerged(fighter, burnedFighter);
     }
 
     function burnBlood(address account, uint256 amount) private {
-        if(account == address(0x00)) revert InvalidAccount();
-        if(amount == 0) revert InvalidAmount();
+        if (account == address(0x00)) revert InvalidAccount();
+        if (amount == 0) revert InvalidAmount();
         //yakuza gets 10%
-        ugArena.payRaidRevenueToYakuza(amount /10) ;
-        uBlood.burn(account , amount * 1 ether);
-        emit YakuzaTaxPaid(amount /10);
+        ugArena.payRaidRevenueToYakuza(amount / 10);
+        uBlood.burn(account, amount * 1 ether);
+        emit YakuzaTaxPaid(amount / 10);
     }
 
     function getGraveyardLength() external view returns (uint256) {
@@ -127,37 +121,30 @@ contract Merge is ReentrancyGuard, Ownable, Pausable {
     function setPaused(bool _paused) external onlyOwner {
         if (_paused) _pause();
         else _unpause();
-    }  
+    }
 
-    /** ONLY ADMIN FUNCTIONS */
-    function resurrectId() external onlyAdmin returns (uint256, uint256 ){
+    /**
+     * ONLY ADMIN FUNCTIONS
+     */
+    function resurrectId() external onlyAdmin returns (uint256, uint256) {
         require(graveyard.length > 0, "Graveyard is empty");
         BurnedFighter memory _burnedFighter;
-        _burnedFighter.tokenId = graveyard[graveyard.length -1].tokenId;
-        _burnedFighter.imageId = graveyard[graveyard.length -1].imageId;
+        _burnedFighter.tokenId = graveyard[graveyard.length - 1].tokenId;
+        _burnedFighter.imageId = graveyard[graveyard.length - 1].imageId;
         graveyard.pop();
         emit ResurrectedId(_burnedFighter.tokenId, _burnedFighter.imageId);
         return (_burnedFighter.tokenId, _burnedFighter.imageId);
     }
 
-    function onERC1155Received(
-        address,
-        address,
-        uint256,
-        uint256,
-        bytes memory
-    ) public virtual returns (bytes4) {
+    function onERC1155Received(address, address, uint256, uint256, bytes memory) public virtual returns (bytes4) {
         return this.onERC1155Received.selector;
     }
 
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] memory,
-        uint256[] memory,
-        bytes memory
-    ) public virtual returns (bytes4) {
+    function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory)
+        public
+        virtual
+        returns (bytes4)
+    {
         return this.onERC1155BatchReceived.selector;
     }
-  
 }

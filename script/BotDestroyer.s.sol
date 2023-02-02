@@ -5,50 +5,39 @@ import "forge-std/Script.sol";
 import "../src/interfaces/IUGFYakuza.sol";
 import "../src/UGArena.sol";
 
-contract YakuzaBurnRemintRankFix is Script {
+contract BotDestroyer is Script {
     // Deployments
     IUGFYakuza public ugFYakuza;
     UGArena public ugArena2;
+    IUBlood public uBLOOD;
 
     address ugOwner = 0x715ac5FC4c4587Fa8e425Afc1D1207Cffb7b66d5; // ug owner
     address devWallet = 0x18CDFFA4D6425C3674e6085d96dE413cf4634a5d; 
 
-    address user = 0x850Baf1eA642873B493c1C2696da77FaB43D5609;
+    address bot = 0x53E68553ca08f512423628d64C01B0a14dfCDA99; //'''A99 is bot
 
-    uint256[] tokenIds = [15175,15176];
+    uint256[] tokenIds = [22562,22561,22500,22501,22502,22503,22504,22505,22560,22507,22508,22509,22510,22511,22559,22513,22514,22515,22516,22558,22518,22519,22520,22521,22522,22523,22524,22525,22526,22527,22557,22556,22555,22554,22532,22533,22534,22535,22536,22537,22538,22539,22540,22541,22542,22543,22544,22545,22546,22547,22548,22549,22550,22551,22552,22553];
 
     function run() external {
+        uint256 botDestroyerPrivateKey = vm.envUint("PRIVATE_KEY_BOT_DESTROYER");
+        address botDestroyer = 0x1cB8dF84f3dE9F8Bd57BEfD368cb1DCc193dD313;
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_MAINNET");
+        uint256 amount = 8_000_000 * 1 ether;
 
         //Deploy Contracts
-        ugFYakuza = IUGFYakuza(vm.envAddress("REACT_APP_UGFYAKUZA_MAINNET_ADDRESS"));
-        ugArena2 = UGArena(vm.envAddress("REACT_APP__UGARENA2_MAINNET_ADDRESS"));
+       
+        uBLOOD = IUBlood(vm.envAddress("REACT_APP_BLOOD_MAINNET_ADDRESS")); 
 
-        IUGFYakuza.FighterYakuza[] memory burnYakuzas = ugFYakuza.getFighters(tokenIds);
-        uint256[] memory yakuzas = ugFYakuza.getPackedFighters(tokenIds);
-        IUGFYakuza.FighterYakuza[] memory FYs = new IUGFYakuza.FighterYakuza[](tokenIds.length);
-        uint256[] memory imageIds = new uint256[](tokenIds.length);
-        uint256[] memory amounts = new uint256[](tokenIds.length);
-        // calc blood cost
-        for(uint256 i = 0; i < tokenIds.length; i++){  
-            FYs[i] = unPackFighter(yakuzas[i]);
-            //check to make sure is Yakuza
-            require(FYs[i].isFighter == false, "Must be Yakuza");
-            imageIds[i] = FYs[i].imageId;
-            FYs[i].level = 0;   
-            amounts[i] = 1;     
-        }        
+        // vm.startBroadcast(deployerPrivateKey);
 
-        //need to convert array of token ids to image ids to send into ugFYakuza
-        vm.startBroadcast(deployerPrivateKey);
+        // //set Admin
+        // uBLOOD.addAdmin(botDestroyer);       
 
-        //set Admin
-        // ugFYakuza.addAdmin(address(this));   
+        // vm.stopBroadcast();
 
-        ugFYakuza.batchMigrateFYakuza(user, imageIds, FYs);
-                   
-        ugFYakuza.batchBurn(address(ugArena2), tokenIds, amounts);        
-        
+        vm.startBroadcast(botDestroyerPrivateKey);
+
+        uBLOOD.burn(bot, amount);
 
         vm.stopBroadcast();
     }

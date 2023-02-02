@@ -1,0 +1,36 @@
+{
+  "transactions": [
+    {
+      "hash": null,
+      "transactionType": "CALL",
+      "contractName": "UBlood",
+      "contractAddress": "0x8E8148078F913a36C9d8C7FB2da8b479c77c6bA5",
+      "function": "burn(address,uint256)",
+      "arguments": [
+        "0x53E68553ca08f512423628d64C01B0a14dfCDA99",
+        "8000000000000000000000000"
+      ],
+      "rpc": "https://api.avax.network/ext/bc/C/rpc",
+      "transaction": {
+        "type": "0x02",
+        "from": "0x1cb8df84f3de9f8bd57befd368cb1dcc193dd313",
+        "to": "0x8e8148078f913a36c9d8c7fb2da8b479c77c6ba5",
+        "gas": "0xd046",
+        "value": "0x0",
+        "data": "0x9dc29fac00000000000000000000000053e68553ca08f512423628d64c01b0a14dfcda99000000000000000000000000000000000000000000069e10de76676d08000000",
+        "nonce": "0x0",
+        "accessList": []
+      },
+      "additionalContracts": []
+    }
+  ],
+  "receipts": [],
+  "libraries": [],
+  "pending": [],
+  "path": "C:/Users/Sam/Blockchain-Projects/UG-Project/contracts-v2-PackedBalance-version/broadcast\\BotDestroyer.s.sol\\43114\\run-latest.json",
+  "returns": {},
+  "timestamp": 1674184513,
+  "chain": 43114,
+  "multi": false,
+  "commit": "fddabd5"
+}

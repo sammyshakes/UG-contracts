@@ -95,10 +95,13 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     address private WITHDRAW_ADDRESS;
     address private devWallet;
 
-    /** MODIFIERS */
+    /**
+     * MODIFIERS
+     */
     modifier onlyEOA() {
-        if (tx.origin != _msgSender())
+        if (tx.origin != _msgSender()) {
             revert OnlyEOA({txorigin: tx.origin, sender: _msgSender()});
+        }
         _;
     }
 
@@ -122,7 +125,9 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         fclubAlley = IUGFClubAlley(_fclubAlley);
     }
 
-    /** MINTING FUNCTIONS */
+    /**
+     * MINTING FUNCTIONS
+     */
     function mintRing() external whenNotPaused nonReentrant onlyEOA {
         if (!RING_MINT_ACTIVE) revert MintNotActive();
         uint256 totalCost = RING_BLOOD_MINT_COST;
@@ -139,12 +144,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         ugNFT.mintRingAmulet(_msgSender(), 1, false);
     }
 
-    function mintFightClubs(uint256 amount)
-        external
-        whenNotPaused
-        nonReentrant
-        onlyEOA
-    {
+    function mintFightClubs(uint256 amount) external whenNotPaused nonReentrant onlyEOA {
         if (!FIGHTCLUB_MINT_ACTIVE) revert MintNotActive();
         uint256 totalCost = FIGHTCLUB_BLOOD_MINT_COST * amount;
         // This will fail if not enough $BLOOD is available
@@ -154,12 +154,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    function mintForges(uint256 amount)
-        external
-        whenNotPaused
-        nonReentrant
-        onlyEOA
-    {
+    function mintForges(uint256 amount) external whenNotPaused nonReentrant onlyEOA {
         if (!FORGE_MINT_ACTIVE) revert MintNotActive();
         uint256 totalCost = FORGE_BLOOD_MINT_COST * amount;
         // This will fail if not enough $BLOOD is available
@@ -169,11 +164,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    function levelUpFighters(
-        uint256[] calldata _tokenIds,
-        uint256[] memory _levelsToUpgrade,
-        bool _isStaked
-    )
+    function levelUpFighters(uint256[] calldata _tokenIds, uint256[] memory _levelsToUpgrade, bool _isStaked)
         external
         whenNotPaused
         nonReentrant
@@ -181,15 +172,18 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         returns (uint256 totalBloodCost)
     {
         //require both argument arrays to be same length
-        if (_tokenIds.length != _levelsToUpgrade.length)
+        if (_tokenIds.length != _levelsToUpgrade.length) {
             revert MismatchArrays();
+        }
 
         //if not staked, must be owned by msgSender
         if (!_isStaked) {
-            if (!ugFYakuza.checkUserBatchBalance(_msgSender(), _tokenIds))
+            if (!ugFYakuza.checkUserBatchBalance(_msgSender(), _tokenIds)) {
                 revert InvalidTokenId();
-        } else if (!ugArena.verifyAllStakedByUser(_msgSender(), _tokenIds))
+            }
+        } else if (!ugArena.verifyAllStakedByUser(_msgSender(), _tokenIds)) {
             revert InvalidTokenId();
+        }
 
         uint256[] memory fighters = ugFYakuza.getPackedFighters(_tokenIds);
 
@@ -197,10 +191,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             //check to make sure not Yakuza
             if (unPackFighter(fighters[i]).isFighter) {
-                totalBloodCost += getFighterLevelUpBloodCost(
-                    unPackFighter(fighters[i]).level,
-                    _levelsToUpgrade[i]
-                );
+                totalBloodCost += getFighterLevelUpBloodCost(unPackFighter(fighters[i]).level, _levelsToUpgrade[i]);
                 _levelsToUpgrade[i] += unPackFighter(fighters[i]).level;
             }
         }
@@ -230,20 +221,14 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         if (userStakedRingId != tokenId) revert InvalidTokenId();
         //get ring and amulet
         ring = ugNFT.getRingAmulet(tokenId);
-        if (ring.level + _levelsToUpgrade > 10 && userStakedAmuletId == 0)
+        if (ring.level + _levelsToUpgrade > 10 && userStakedAmuletId == 0) {
             revert InvalidLevel();
+        }
 
         //must have minimum number of staked fighters
-        if (
-            numStakedFighters <
-            (ring.level + _levelsToUpgrade) * MIN_FIGHTERS_PER_RING
-        ) revert NeedMoreFighters();
+        if (numStakedFighters < (ring.level + _levelsToUpgrade) * MIN_FIGHTERS_PER_RING) revert NeedMoreFighters();
 
-        totalBloodCost = getRingLevelUpBloodCost(
-            ring.level,
-            _levelsToUpgrade,
-            numStakedFighters
-        );
+        totalBloodCost = getRingLevelUpBloodCost(ring.level, _levelsToUpgrade, numStakedFighters);
 
         burnBlood(account, totalBloodCost);
         //level up rings
@@ -266,17 +251,9 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         //get amulet
         amulet = ugNFT.getRingAmulet(tokenId);
 
-        require(
-            numStakedFighters >=
-                (amulet.level + _levelsToUpgrade) * MIN_FIGHTERS_PER_AMULET,
-            "NEED_MORE_FIGHTERS"
-        );
+        require(numStakedFighters >= (amulet.level + _levelsToUpgrade) * MIN_FIGHTERS_PER_AMULET, "NEED_MORE_FIGHTERS");
 
-        totalBloodCost = getAmuletLevelUpBloodCost(
-            amulet.level,
-            _levelsToUpgrade,
-            numStakedFighters
-        );
+        totalBloodCost = getAmuletLevelUpBloodCost(amulet.level, _levelsToUpgrade, numStakedFighters);
 
         burnBlood(account, totalBloodCost);
 
@@ -289,13 +266,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         uint256[] memory _upgradeLevels,
         uint256[] memory _upgradeSizes,
         bool _isStaked
-    )
-        external
-        whenNotPaused
-        nonReentrant
-        onlyEOA
-        returns (uint256 totalBloodCost)
-    {
+    ) external whenNotPaused nonReentrant onlyEOA returns (uint256 totalBloodCost) {
         if (tokenIds.length != _upgradeLevels.length) revert MismatchArrays();
         if (tokenIds.length != _upgradeSizes.length) revert MismatchArrays();
         IUGNFT.ForgeFightClub memory fclub;
@@ -303,10 +274,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         for (uint256 i; i < tokenIds.length; i++) {
             fclub = ugNFT.getForgeFightClub(tokenIds[i]);
             totalBloodCost += getFightClubLevelUpBloodCost(
-                fclub.level,
-                fclub.size,
-                _upgradeLevels[i] == 1 ? 1 : 0,
-                _upgradeSizes[i] == 1 ? 1 : 0
+                fclub.level, fclub.size, _upgradeLevels[i] == 1 ? 1 : 0, _upgradeSizes[i] == 1 ? 1 : 0
             );
 
             if (_upgradeLevels[i] == 1 && _upgradeSizes[i] == 0) {
@@ -334,10 +302,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         ugNFT.levelUpFightClubsForges(tokenIds, _upgradeSizes, _upgradeLevels);
     }
 
-    function levelUpForges(
-        uint256[] calldata tokenIds,
-        uint256[] memory _levelsToUpgrade
-    )
+    function levelUpForges(uint256[] calldata tokenIds, uint256[] memory _levelsToUpgrade)
         external
         whenNotPaused
         nonReentrant
@@ -346,9 +311,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
     {
         //forge size = weapon type, size 1 = knuckles
         if (tokenIds.length != _levelsToUpgrade.length) revert MismatchArrays();
-        IUGNFT.ForgeFightClub[] memory forges = ugNFT.getForgeFightClubs(
-            tokenIds
-        );
+        IUGNFT.ForgeFightClub[] memory forges = ugNFT.getForgeFightClubs(tokenIds);
         uint256[] memory sizes = new uint256[](tokenIds.length);
         uint256 newLevel;
         uint256 totalLevels;
@@ -361,11 +324,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
             if (forges[i].size == 3 && newLevel > 21) revert MustUpgradeSize();
             if (forges[i].size == 4 && newLevel > 28) revert MustUpgradeSize();
 
-            totalBloodCost += getForgeLevelUpBloodCost(
-                forges[i].level,
-                forges[i].size,
-                _levelsToUpgrade[i]
-            );
+            totalBloodCost += getForgeLevelUpBloodCost(forges[i].level, forges[i].size, _levelsToUpgrade[i]);
 
             if (totalBloodCost == 0) revert BloodError();
             totalLevels += _levelsToUpgrade[i];
@@ -389,21 +348,23 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         returns (uint256 totalBloodCost)
     {
         //forge size = weapon type, size 1 = knuckles
-        IUGNFT.ForgeFightClub[] memory forges = ugNFT.getForgeFightClubs(
-            tokenIds
-        );
+        IUGNFT.ForgeFightClub[] memory forges = ugNFT.getForgeFightClubs(tokenIds);
         uint256[] memory sizes = new uint256[](tokenIds.length);
         uint256[] memory levels = new uint256[](tokenIds.length);
         for (uint256 i; i < tokenIds.length; i++) {
             //make sure forge is required level for upgrade
-            if (forges[i].size == 1 && forges[i].level < 7)
+            if (forges[i].size == 1 && forges[i].level < 7) {
                 revert MustUpgradeLevel();
-            if (forges[i].size == 2 && forges[i].level < 14)
+            }
+            if (forges[i].size == 2 && forges[i].level < 14) {
                 revert MustUpgradeLevel();
-            if (forges[i].size == 3 && forges[i].level < 21)
+            }
+            if (forges[i].size == 3 && forges[i].level < 21) {
                 revert MustUpgradeLevel();
-            if (forges[i].size == 4 && forges[i].level < 28)
+            }
+            if (forges[i].size == 4 && forges[i].level < 28) {
                 revert MustUpgradeLevel();
+            }
 
             totalBloodCost += getForgeSizeUpBloodCost(forges[i].size);
             sizes[i] = forges[i].size + 1;
@@ -416,26 +377,20 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         ugNFT.levelUpFightClubsForges(tokenIds, sizes, levels);
     }
 
-    function getForgeLevelUpBloodCost(
-        uint256 currentLevel,
-        uint256 currentSize,
-        uint256 levelsToUpgrade
-    ) public view returns (uint256 totalBloodCost) {
+    function getForgeLevelUpBloodCost(uint256 currentLevel, uint256 currentSize, uint256 levelsToUpgrade)
+        public
+        view
+        returns (uint256 totalBloodCost)
+    {
         //forge size = weapon type, size 1 = knuckles
         if (currentLevel == 0 && levelsToUpgrade == 0) revert InvalidLevel();
         totalBloodCost = 0;
 
-        if (levelsToUpgrade == 0)
-            totalBloodCost = _getForgeBloodCostPerLevel(
-                currentLevel,
-                currentSize
-            );
-        else if (levelsToUpgrade > 0) {
+        if (levelsToUpgrade == 0) {
+            totalBloodCost = _getForgeBloodCostPerLevel(currentLevel, currentSize);
+        } else if (levelsToUpgrade > 0) {
             for (uint8 i = 1; i <= levelsToUpgrade; i++) {
-                totalBloodCost += _getForgeBloodCostPerLevel(
-                    currentLevel + i,
-                    currentSize
-                );
+                totalBloodCost += _getForgeBloodCostPerLevel(currentLevel + i, currentSize);
             }
         }
         if (totalBloodCost == 0) revert BloodError();
@@ -448,11 +403,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         return totalBloodCost;
     }
 
-    function getForgeSizeUpBloodCost(uint16 currentSize)
-        public
-        view
-        returns (uint256 totalBloodCost)
-    {
+    function getForgeSizeUpBloodCost(uint16 currentSize) public view returns (uint256 totalBloodCost) {
         //forge size = weapon type, size 1 = knuckles
         totalBloodCost = _getForgeBloodCostPerSize(currentSize + 1);
         if (totalBloodCost == 0) revert BloodError();
@@ -463,27 +414,19 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         return totalBloodCost;
     }
 
-    function _getForgeBloodCostPerLevel(uint256 level, uint256 size)
-        private
-        view
-        returns (uint256 price)
-    {
+    function _getForgeBloodCostPerLevel(uint256 level, uint256 size) private view returns (uint256 price) {
         //forge size = weapon type, size 1 = knuckles
         if (size == 0 || size > FORGE_MAX_SIZE) revert InvalidSizes();
         if (level == 0 || level > FORGE_MAX_LEVEL) revert InvalidLevel();
         if (level % 7 == 0) {
-            return (FORGE_BASE_LEVEL_COST * (2**(size - 1)) * 7);
+            return (FORGE_BASE_LEVEL_COST * (2 ** (size - 1)) * 7);
         }
-        return (FORGE_BASE_LEVEL_COST * (2**(size - 1)) * (level % 7));
+        return (FORGE_BASE_LEVEL_COST * (2 ** (size - 1)) * (level % 7));
     }
 
-    function _getForgeBloodCostPerSize(uint256 size)
-        private
-        view
-        returns (uint256 price)
-    {
+    function _getForgeBloodCostPerSize(uint256 size) private view returns (uint256 price) {
         if (size == 0 || size > FORGE_MAX_SIZE) revert InvalidSizes();
-        return (FORGE_BASE_SIZE_COST * (2**(size - 1)));
+        return (FORGE_BASE_SIZE_COST * (2 ** (size - 1)));
     }
 
     function getFightClubLevelUpBloodCost(
@@ -496,37 +439,24 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         require(currentSize >= 0, "Game: Invalid currentSize");
         totalBloodCost = 0;
 
-        if (levelsToUpgrade == 0 && sizesToUpgrade == 0)
-            totalBloodCost = _getFightClubBloodCostPerLevel(
-                currentLevel,
-                currentSize
-            );
-        else if (levelsToUpgrade == 1) {
+        if (levelsToUpgrade == 0 && sizesToUpgrade == 0) {
+            totalBloodCost = _getFightClubBloodCostPerLevel(currentLevel, currentSize);
+        } else if (levelsToUpgrade == 1) {
             if (sizesToUpgrade == 1) {
-                totalBloodCost += _getFightClubBloodCostPerLevel(
-                    currentLevel + 1,
-                    currentSize + 1
-                );
+                totalBloodCost += _getFightClubBloodCostPerLevel(currentLevel + 1, currentSize + 1);
             } else {
-                totalBloodCost += _getFightClubBloodCostPerLevel(
-                    currentLevel + 1,
-                    currentSize
-                );
+                totalBloodCost += _getFightClubBloodCostPerLevel(currentLevel + 1, currentSize);
             }
         } else {
             //if only size is being upgraded
-            totalBloodCost += _getFightClubBloodCostPerLevel(
-                currentLevel,
-                currentSize + 1
-            );
+            totalBloodCost += _getFightClubBloodCostPerLevel(currentLevel, currentSize + 1);
         }
 
         if (totalBloodCost == 0) revert BloodError();
 
         if (FIGHTCLUB_LEVEL_COST_ADJUSTMENT_PCT != 100) {
             //inflation adjustment logic
-            return ((totalBloodCost * FIGHTCLUB_LEVEL_COST_ADJUSTMENT_PCT) /
-                100);
+            return ((totalBloodCost * FIGHTCLUB_LEVEL_COST_ADJUSTMENT_PCT) / 100);
         }
         //inflation adjustment logic
         return totalBloodCost;
@@ -536,34 +466,21 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         return size / 5;
     }
 
-    function _getFightClubBloodCostPerLevel(uint256 level, uint256 size)
-        private
-        view
-        returns (uint256 price)
-    {
+    function _getFightClubBloodCostPerLevel(uint256 level, uint256 size) private view returns (uint256 price) {
         if (level == 0 || size == 0) return 0;
-        return ((FIGHT_CLUB_BASE_LEVEL_COST +
-            FIGHT_CLUB_BASE_LEVEL_COST *
-            level) * size * FIGHTCLUB_BASE_MULTIPLIER);
-            
+        return ((FIGHT_CLUB_BASE_LEVEL_COST + FIGHT_CLUB_BASE_LEVEL_COST * level) * size * FIGHTCLUB_BASE_MULTIPLIER);
     }
 
-    function _getFighterBloodCostPerLevel(uint16 level)
-        private
-        view
-        returns (uint256 price)
-    {
+    function _getFighterBloodCostPerLevel(uint16 level) private view returns (uint256 price) {
         if (level == 0) return 0;
-        return (2 *
-            FIGHTER_BASE_LEVEL_COST +
-            FIGHTER_BASE_LEVEL_COST *
-            ((level - 1)**2));
+        return (2 * FIGHTER_BASE_LEVEL_COST + FIGHTER_BASE_LEVEL_COST * ((level - 1) ** 2));
     }
 
-    function getFighterLevelUpBloodCost(
-        uint16 currentLevel,
-        uint256 levelsToUpgrade
-    ) public view returns (uint256 totalBloodCost) {
+    function getFighterLevelUpBloodCost(uint16 currentLevel, uint256 levelsToUpgrade)
+        public
+        view
+        returns (uint256 totalBloodCost)
+    {
         if (levelsToUpgrade == 0) revert InvalidLevel();
 
         totalBloodCost = 0;
@@ -580,26 +497,20 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         return totalBloodCost;
     }
 
-    function getRingLevelUpBloodCost(
-        uint16 currentLevel,
-        uint256 levelsToUpgrade,
-        uint256 numFighters
-    ) public view returns (uint256 totalBloodCost) {
+    function getRingLevelUpBloodCost(uint16 currentLevel, uint256 levelsToUpgrade, uint256 numFighters)
+        public
+        view
+        returns (uint256 totalBloodCost)
+    {
         if (currentLevel == 0) revert InvalidLevel();
 
         totalBloodCost = 0;
 
-        if (levelsToUpgrade == 0)
-            totalBloodCost = _getRingBloodCostPerLevel(
-                currentLevel,
-                numFighters
-            );
-        else {
+        if (levelsToUpgrade == 0) {
+            totalBloodCost = _getRingBloodCostPerLevel(currentLevel, numFighters);
+        } else {
             for (uint16 i = 1; i <= levelsToUpgrade; i++) {
-                totalBloodCost += _getRingBloodCostPerLevel(
-                    currentLevel + i,
-                    numFighters
-                );
+                totalBloodCost += _getRingBloodCostPerLevel(currentLevel + i, numFighters);
             }
         }
         if (totalBloodCost == 0) revert BloodError();
@@ -612,40 +523,28 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         return totalBloodCost;
     }
 
-    function _getRingBloodCostPerLevel(uint16 level, uint256 numFighters)
-        private
-        view
-        returns (uint256 price)
-    {
+    function _getRingBloodCostPerLevel(uint16 level, uint256 numFighters) private view returns (uint256 price) {
         if (level == 0) return 0;
-        price = (RING_BASE_LEVEL_COST +
-            RING_BASE_LEVEL_COST *
-            ((level - 1)**2));
+        price = (RING_BASE_LEVEL_COST + RING_BASE_LEVEL_COST * ((level - 1) ** 2));
         //adjust based on number of fighters
         price += (price * numFighters) / 200;
         return price;
     }
 
-    function getAmuletLevelUpBloodCost(
-        uint16 currentLevel,
-        uint256 levelsToUpgrade,
-        uint256 numFighters
-    ) public view returns (uint256 totalBloodCost) {
+    function getAmuletLevelUpBloodCost(uint16 currentLevel, uint256 levelsToUpgrade, uint256 numFighters)
+        public
+        view
+        returns (uint256 totalBloodCost)
+    {
         if (currentLevel == 0) revert InvalidLevel();
 
         totalBloodCost = 0;
 
-        if (levelsToUpgrade == 0)
-            totalBloodCost = _getAmuletBloodCostPerLevel(
-                currentLevel,
-                numFighters
-            );
-        else {
+        if (levelsToUpgrade == 0) {
+            totalBloodCost = _getAmuletBloodCostPerLevel(currentLevel, numFighters);
+        } else {
             for (uint16 i = 1; i <= levelsToUpgrade; i++) {
-                totalBloodCost += _getAmuletBloodCostPerLevel(
-                    currentLevel + i,
-                    numFighters
-                );
+                totalBloodCost += _getAmuletBloodCostPerLevel(currentLevel + i, numFighters);
             }
         }
         if (totalBloodCost == 0) revert BloodError();
@@ -658,15 +557,9 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         return totalBloodCost;
     }
 
-    function _getAmuletBloodCostPerLevel(uint16 level, uint256 numFighters)
-        private
-        view
-        returns (uint256 price)
-    {
+    function _getAmuletBloodCostPerLevel(uint16 level, uint256 numFighters) private view returns (uint256 price) {
         if (level == 0) return 0;
-        price = (AMULET_BASE_LEVEL_COST +
-            AMULET_BASE_LEVEL_COST *
-            ((level - 1)**2));
+        price = (AMULET_BASE_LEVEL_COST + AMULET_BASE_LEVEL_COST * ((level - 1) ** 2));
         price += (price * numFighters) / 200;
     }
 
@@ -677,11 +570,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         emit BloodBurned(block.timestamp, (amount * 90) / 100);
     }
 
-    function unPackFighter(uint256 packedFighter)
-        private
-        pure
-        returns (IUGFYakuza.FighterYakuza memory)
-    {
+    function unPackFighter(uint256 packedFighter) private pure returns (IUGFYakuza.FighterYakuza memory) {
         IUGFYakuza.FighterYakuza memory fighter;
         fighter.isFighter = uint8(packedFighter) % 2 == 1 ? true : false;
         fighter.Gen = uint8(packedFighter >> 1) % 2;
@@ -703,7 +592,9 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
         return fighter;
     }
 
-    /** OWNER ONLY FUNCTIONS */
+    /**
+     * OWNER ONLY FUNCTIONS
+     */
     function setContracts(
         address _uBlood,
         address _ugFYakuza,
@@ -822,7 +713,7 @@ contract UGgame is IUGgame, Ownable, ReentrancyGuard, Pausable {
 
     function withdraw() external onlyOwner {
         uint256 amount = address(this).balance;
-        (bool sent, ) = WITHDRAW_ADDRESS.call{value: amount}("");
+        (bool sent,) = WITHDRAW_ADDRESS.call{value: amount}("");
         require(sent, "Game: Failed to send funds");
     }
 }

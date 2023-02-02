@@ -1,0 +1,36 @@
+{
+  "transactions": [
+    {
+      "hash": "0xce20565b36e31fada1765d18d983f711546d631297457da70f98c32e566c9689",
+      "transactionType": "CALL",
+      "contractName": "UBlood",
+      "contractAddress": "0x8E8148078F913a36C9d8C7FB2da8b479c77c6bA5",
+      "function": "mint(address,uint256)",
+      "arguments": [
+        "0x3684a00857C5f5D008B1DBd51387d0080f2c9B1b",
+        "500000000000000000000000"
+      ],
+      "rpc": "https://api.avax.network/ext/bc/C/rpc",
+      "transaction": {
+        "type": "0x02",
+        "from": "0x715ac5fc4c4587fa8e425afc1d1207cffb7b66d5",
+        "to": "0x8e8148078f913a36c9d8c7fb2da8b479c77c6ba5",
+        "gas": "0x13280",
+        "value": "0x0",
+        "data": "0x40c10f190000000000000000000000003684a00857c5f5d008b1dbd51387d0080f2c9b1b0000000000000000000000000000000000000000000069e10de76676d0800000",
+        "nonce": "0x492",
+        "accessList": []
+      },
+      "additionalContracts": []
+    }
+  ],
+  "receipts": [],
+  "libraries": [],
+  "pending": [],
+  "path": "C:/Users/Sam/Blockchain-Projects/UG-Project/contracts-v2-PackedBalance-version/broadcast\\BloodDrop.s.sol\\43114\\run-latest.json",
+  "returns": {},
+  "timestamp": 1675080088,
+  "chain": 43114,
+  "multi": false,
+  "commit": "fddabd5"
+}

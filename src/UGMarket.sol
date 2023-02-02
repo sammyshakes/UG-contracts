@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 //slither-disable-next-line locked-ether
 contract Market {
-
     address public owner;
 
     struct Listing {
@@ -52,11 +51,7 @@ contract Market {
 
     event OwnerUpdated(address indexed newOwner);
     event AddListingEv(
-        uint256 listingId,
-        address indexed tokenAddress,
-        uint256 indexed tokenId,
-        uint256 amount,
-        uint256 price
+        uint256 listingId, address indexed tokenAddress, uint256 indexed tokenId, uint256 amount, uint256 price
     );
     event UpdateListingEv(uint256 listingId, uint256 price);
     event CancelListingEv(uint256 listingId);
@@ -81,11 +76,11 @@ contract Market {
     //////////////////////////////////////////////////////////////*/
 
     constructor(
-        address _ugnft, 
-        address _ugFYakuza, 
+        address _ugnft,
+        address _ugFYakuza,
         address _ugWeapons,
-        address _blood, 
-        uint256 _marketFee, 
+        address _blood,
+        uint256 _marketFee,
         uint256 _listingFee
     ) {
         owner = msg.sender;
@@ -100,7 +95,7 @@ contract Market {
         validTokenAddresses[_ugWeapons] = true;
     }
 
-     modifier onlyOwner() {
+    modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
         _;
     }
@@ -154,32 +149,27 @@ contract Market {
 
         uint256 len = listingIDs.length;
         //slither-disable-next-line uninitialized-local
-        for (uint256 i; i < len; ) {
+        for (uint256 i; i < len;) {
             uint256 id = listingIDs[i];
             //rewrite this by building arrays then use safeBatchTransfer
             Listing memory listing = listings[id];
             if (listing.active) {
                 listings[id].active = false;
                 IERC1155(listing.tokenAddress).safeTransferFrom(
-                    address(this),
-                    listing.owner,
-                    listing.tokenId,
-                    listing.amount,
-                    ""
+                    address(this), listing.owner, listing.tokenId, listing.amount, ""
                 );
             }
             unchecked {
                 ++i;
             }
         }
-        
     }
 
     /*///////////////////////////////////////////////////////////////
                         LISTINGS WRITE OPERATIONS
     //////////////////////////////////////////////////////////////*/
     //Listings can be multiple token ids but all from same contract
-    function addListings(        
+    function addListings(
         address _tokenAddress,
         uint256[] calldata _tokenIds,
         uint256[] calldata _amounts,
@@ -187,43 +177,35 @@ contract Market {
     ) external {
         if (!isMarketOpen) revert ClosedMarket();
         if (!validTokenAddresses[_tokenAddress]) revert InvalidTokenAddress();
-        if(_tokenIds.length != _amounts.length) revert MismatchArrays();
-        if(_tokenIds.length != _prices.length) revert MismatchArrays();
+        if (_tokenIds.length != _amounts.length) revert MismatchArrays();
+        if (_tokenIds.length != _prices.length) revert MismatchArrays();
 
         uint256 id;
         uint256 totalListingFee;
-        for(uint i; i < _tokenIds.length; i++){
+        for (uint256 i; i < _tokenIds.length; i++) {
             // overflow is unrealistic
             unchecked {
                 id = listingsLength++;
 
-                listings[id] = Listing(
-                    id,
-                    _tokenIds[i],
-                    _amounts[i],
-                    _prices[i],
-                    _tokenAddress,
-                    msg.sender,
-                    true
-                );
+                listings[id] = Listing(id, _tokenIds[i], _amounts[i], _prices[i], _tokenAddress, msg.sender, true);
                 totalListingFee += _prices[i];
                 emit AddListingEv(id, _tokenAddress, _tokenIds[i], _amounts[i], _prices[i]);
             }
         }
         totalListingFee = totalListingFee * listingFee / 100;
         uBlood.burn(msg.sender, totalListingFee * 1 ether);
-        IERC1155(_tokenAddress).safeBatchTransferFrom(msg.sender, address(this), _tokenIds, _amounts, "");        
+        IERC1155(_tokenAddress).safeBatchTransferFrom(msg.sender, address(this), _tokenIds, _amounts, "");
     }
 
     function updateListing(uint256[] calldata ids, uint256[] calldata prices) external {
         if (!isMarketOpen) revert ClosedMarket();
-        for(uint i; i < ids.length; i++){
+        for (uint256 i; i < ids.length; i++) {
             if (ids[i] >= listingsLength) revert InvalidListing();
             if (listings[ids[i]].owner != msg.sender) revert Unauthorized();
 
             listings[ids[i]].price = prices[i];
             emit UpdateListingEv(ids[i], prices[i]);
-        }        
+        }
     }
 
     function cancelListings(uint256[] calldata ids, address _tokenAddress) external {
@@ -231,7 +213,7 @@ contract Market {
         uint256[] memory _tokenIds = new uint256[](ids.length);
         uint256[] memory _amounts = new uint256[](ids.length);
 
-        for(uint i; i < ids.length; i++){
+        for (uint256 i; i < ids.length; i++) {
             if (ids[i] >= listingsLength) revert InvalidListing();
 
             listing = listings[ids[i]];
@@ -246,10 +228,8 @@ contract Market {
             delete listings[ids[i]];
 
             emit CancelListingEv(ids[i]);
-
         }
-        IERC1155(_tokenAddress).safeBatchTransferFrom( address(this), msg.sender, _tokenIds, _amounts, "");
-
+        IERC1155(_tokenAddress).safeBatchTransferFrom(address(this), msg.sender, _tokenIds, _amounts, "");
     }
 
     function fulfillListings(uint256[] calldata ids, address _tokenAddress) external {
@@ -257,11 +237,11 @@ contract Market {
 
         uint256 totalBloodFee;
         address listingOwner;
-        Listing memory listing;        
+        Listing memory listing;
         uint256[] memory _tokenIds = new uint256[](ids.length);
         uint256[] memory _amounts = new uint256[](ids.length);
 
-        for(uint i; i < ids.length; i++){
+        for (uint256 i; i < ids.length; i++) {
             if (ids[i] >= listingsLength) revert InvalidListing();
 
             listing = listings[ids[i]];
@@ -284,14 +264,10 @@ contract Market {
         }
         //burn blood from buyer
         uBlood.burn(msg.sender, totalBloodFee * 1 ether);
-        IERC1155(_tokenAddress).safeBatchTransferFrom( address(this), msg.sender, _tokenIds, _amounts, "");
+        IERC1155(_tokenAddress).safeBatchTransferFrom(address(this), msg.sender, _tokenIds, _amounts, "");
     }
 
-    function getListings(uint256 from, uint256 length)
-        external
-        view
-        returns (Listing[] memory listing)
-    {
+    function getListings(uint256 from, uint256 length) external view returns (Listing[] memory listing) {
         unchecked {
             uint256 numListings = listingsLength;
             if (from + length > numListings) {
@@ -300,7 +276,7 @@ contract Market {
 
             Listing[] memory _listings = new Listing[](length);
             //slither-disable-next-line uninitialized-local
-            for (uint256 i; i < length; ) {
+            for (uint256 i; i < length;) {
                 _listings[i] = listings[from + i];
                 ++i;
             }
@@ -308,24 +284,18 @@ contract Market {
         }
     }
 
-    /** ERC 165 */
-  function onERC1155Received(
-        address,
-        address,
-        uint256,
-        uint256,
-        bytes memory
-    ) public virtual returns (bytes4) {
+    /**
+     * ERC 165
+     */
+    function onERC1155Received(address, address, uint256, uint256, bytes memory) public virtual returns (bytes4) {
         return this.onERC1155Received.selector;
     }
 
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] memory,
-        uint256[] memory,
-        bytes memory
-    ) public virtual returns (bytes4) {
+    function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory)
+        public
+        virtual
+        returns (bytes4)
+    {
         return this.onERC1155BatchReceived.selector;
     }
 }
